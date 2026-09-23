@@ -67,3 +67,7 @@ and would carry the user's draft.
   the formatting.
 
 ## Comments
+
+**2026-09-23 (from ticket 23):** `AcceptsFeedback: false` is already set,
+in `FfxivImeBridge.json`. `repo.json` is generated from the in-zip
+manifest, so it inherits the value. That bullet is done.

@@ -1,6 +1,6 @@
 # M3.3 — repo.json and the release workflow
 
-Status: ready-for-agent
+Status: ready-for-human
 Blocked by: 21, 22
 Type: task
 
@@ -77,3 +77,59 @@ Releasing is then: bump `<Version>`, commit, tag `v<Version>`, push both.
   broken.)
 
 ## Comments
+
+**2026-09-23: workflow written; the acceptance run is yours.**
+
+- **How `repo.json` is made:** the workflow builds it from the manifest
+  inside the released zip, plus the two pinned `DownloadLink*` fields. It
+  doesn't keep a second hand-written copy of the plugin text.
+  - `AssemblyVersion`, `InternalName`, `DalamudApiLevel`, `Punchline` and
+    the rest therefore can't disagree with the zip. That handles the
+    "must agree" item ticket 22 left here.
+  - This deliberately replaces step 5's "`AssemblyVersion` … from the
+    tag". The version comes from the in-zip manifest, and only the links
+    come from the tag. Step 1 makes the two equal.
+  - `repo.json` also carries the packager's default fields
+    (`LoadRequiredState`, `LoadSync`, …). They are harmless.
+- **Known edges (left as they are):**
+  - A run that fails after `gh release create` can't simply be re-run:
+    delete the release first (`docs/dev-plugin.md`, "Release").
+  - Pushing an older tag late would set `repo.json` back to that version.
+    Tags are cut in order, one at a time, so there is no guard.
+  - `AcceptsFeedback: false` is set in `FfxivImeBridge.json`, so both
+    files carry it. That was ticket 25's bullet.
+- **Asset name:** `FfxivImeBridge.zip` (the packager's `latest.zip`,
+  renamed). The tag in the URL is what makes it unambiguous.
+- **Dalamud version in the notes:** the `ProductVersion` of `Dalamud.dll`,
+  read with `strings -el`. For today's release branch that is
+  `15.0.3.5+e81744f6aea94bb6781affdd0d0b9319592f95d9`, which includes the
+  commit.
+- **Build against the distrib Dalamud:** checked locally against
+  `dalamud-distrib/latest.zip`, the zip the action installs, with
+  `DBUS_SESSION_BUS_ADDRESS` unset.
+  - Release build: 0 warnings.
+  - Tests: 311 passed; the fcitx5 suite passed 6 and skipped 15.
+- **Dry run of the shell steps:** run against a local bare `origin`, with
+  `gh` stubbed out.
+  - Tag `v0.2.0` against `<Version>0.1.0</Version>` fails at step 1.
+  - `v0.1.0` produces the release call with the Dalamud note.
+  - `repo.json` is committed to `main` by `github-actions[bot]` with a
+    `+0000` date, and has `0.1.0.0` and the pinned links.
+- **Lint:** `actionlint` 1.7.12 reports nothing.
+
+**Still to do (human):**
+1. `gh auth login`, then push `main`.
+2. Check the mismatch path with a tag that disagrees with `<Version>`:
+   the job should fail at step 1. Delete the tag afterwards.
+3. Tag `v0.1.0` and push it, then check with `gh`:
+   - the release has `FfxivImeBridge.zip` attached and the Dalamud line
+     in its notes;
+   - `gh api repos/niku-0/ffxiv-ime-bridge/contents/repo.json` on `main`
+     states `0.1.0.0` and that asset's link;
+   - `unzip -p` of the downloaded asset's `FfxivImeBridge.json` matches
+     it.
+
+   Consider cutting `v0.1.0` only after ticket 25's plugin change, the
+   **Copy ladder** button, lands. Ticket 27 installs "the version shown
+   … matches the tag (`0.1.0`)", and a 0.1.0 without it would force a
+   0.1.1 first.

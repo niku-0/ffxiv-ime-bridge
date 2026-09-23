@@ -1,0 +1,76 @@
+# How to release, and what this does: docs/dev-plugin.md, "Release".
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # creates the release and pushes repo.json to main
+
+env:
+  TZ: UTC
+  CSPROJ: src/FfxivImeBridge/FfxivImeBridge.csproj
+  OUTPUT_DIR: src/FfxivImeBridge/bin/Release/FfxivImeBridge
+  ASSET: FfxivImeBridge.zip
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # repo.json's download link comes from the tag, the in-zip manifest's version from the csproj;
+      # Dalamud no longer reconciles them at install time, so a mismatch would ship silently.
+      - name: Tag matches the csproj Version
+        run: |
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$CSPROJ")
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match <Version>$version</Version> in $CSPROJ"
+            exit 1
+          fi
+
+      # Sets DALAMUD_HOME, which Dalamud.NET.Sdk and the tests' DalamudLibPath both honour.
+      - uses: Blooym/setup-dalamud@v1
+        with:
+          branch: release
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # The fcitx5 tests skip themselves: the runner has no DBUS_SESSION_BUS_ADDRESS.
+      - run: dotnet test
+
+      - run: dotnet build "$CSPROJ" -c Release
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dalamud_version=$(strings -el "$DALAMUD_HOME/Dalamud.dll" | grep -x -A1 ProductVersion | tail -n1)
+          if [ -z "$dalamud_version" ]; then
+            echo "::error::No ProductVersion in $DALAMUD_HOME/Dalamud.dll"
+            exit 1
+          fi
+          cp "$OUTPUT_DIR/latest.zip" "$RUNNER_TEMP/$ASSET"
+          gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/$ASSET" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Built against Dalamud $dalamud_version (release branch)."
+
+      # repo.json is the manifest inside the zip plus the pinned download links, so the two cannot drift.
+      - name: Commit repo.json to main
+        run: |
+          link="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/$ASSET"
+          unzip -p "$RUNNER_TEMP/$ASSET" FfxivImeBridge.json \
+            | jq --arg link "$link" '[. + {DownloadLinkInstall: $link, DownloadLinkUpdate: $link}]' \
+            > "$RUNNER_TEMP/repo.json"
+          git fetch --depth=1 origin main
+          git switch -C main FETCH_HEAD
+          cp "$RUNNER_TEMP/repo.json" repo.json
+          git add repo.json
+          git diff --cached --quiet && exit 0 # a re-run with repo.json already current
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "repo.json: $GITHUB_REF_NAME"
+          git push origin main

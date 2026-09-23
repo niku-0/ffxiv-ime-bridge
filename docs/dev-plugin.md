@@ -19,7 +19,25 @@ place.
 copies it to the output and fills in `InternalName`, `AssemblyVersion` (from
 `<Version>` in the csproj) and `DalamudApiLevel` (15, which must equal the
 running Dalamud's major version). Dalamud no longer replaces the installed
-manifest with the `repo.json` entry, so the two must agree by hand.
+manifest with the `repo.json` entry, so the two must agree. The release
+workflow guarantees it by making `repo.json` from the manifest.
+
+## Release
+
+Bump `<Version>` in `src/FfxivImeBridge/FfxivImeBridge.csproj`, commit, tag
+`v<Version>`, push both. `.github/workflows/release.yml` then:
+
+1. fails unless the tag is `v` + `<Version>`;
+2. installs the release branch of Dalamud, runs `dotnet test` (the fcitx5
+   tests skip without a session bus) and builds Release;
+3. creates the GitHub release with `FfxivImeBridge.zip` attached, noting the
+   Dalamud version it was built against;
+4. commits `repo.json` to `main`: the manifest inside that zip, plus
+   `DownloadLinkInstall`/`DownloadLinkUpdate` pinned to the asset.
+
+Pull afterwards: `main` has moved. `repo.json` is never edited by hand. If
+the run fails after creating the release, delete the release (not the tag)
+and re-run the job.
 
 ## Load it as a dev plugin (XIVLauncher.Core, Dalamud 15)
 

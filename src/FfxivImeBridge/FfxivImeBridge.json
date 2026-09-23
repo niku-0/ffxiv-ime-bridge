@@ -5,5 +5,6 @@
   "Description": "Lets you type Japanese in the FFXIV chat box on Linux. Instead of going through Wine's IME support, the plugin talks to fcitx5 directly and shows what you are composing, candidate list included, right in the chat box.\n\nRequires fcitx5 with a Japanese input method such as Mozc. On Windows the plugin does nothing.\n\nType /imebridge to open the settings.",
   "ApplicableVersion": "any",
   "RepoUrl": "https://github.com/niku-0/ffxiv-ime-bridge",
+  "AcceptsFeedback": false,
   "Tags": ["ime", "japanese", "linux", "fcitx5", "chat"]
 }
