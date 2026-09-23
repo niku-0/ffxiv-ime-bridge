@@ -5,3 +5,4 @@ obj/
 .idea/
 *.swp
 .claude/settings.local.json
+.scratch/drafts/
