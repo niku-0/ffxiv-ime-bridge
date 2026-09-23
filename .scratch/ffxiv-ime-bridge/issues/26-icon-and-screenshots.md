@@ -27,3 +27,5 @@ The Square Enix UI-asset extracts in the unpublished reference captures
 done and lives in prose.
 
 ## Comments
+
+Moved to GitHub issue #1.
