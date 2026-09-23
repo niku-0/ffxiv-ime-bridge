@@ -116,10 +116,11 @@ After `lost the connection to fcitx5` it needs `/imebridge reconnect`.
 [on|off]`, `indicator [on|off]`, `reconnect`, `probe` and `debug` do what
 they say; `/xlhelp` lists them too.
 
-**Reporting a problem.** Open an issue on GitHub with your distribution, Wine
-or Proton build, desktop session, input method and keyboard layout, what
-`/imebridge probe` printed, and what you typed and what appeared. Please don't
-attach `dalamud.log` unless asked: it can contain your chat.
+**Reporting a problem.** Open an issue on GitHub with the bug report template.
+It asks for the ladder from the debug window's **Copy ladder** button (on the
+**Transport** tab, home folder already shortened to `~`), your setup, and what
+you typed and what appeared. Please don't attach `dalamud.log` unless asked:
+it can contain your chat.
 
 ## Tested on
 

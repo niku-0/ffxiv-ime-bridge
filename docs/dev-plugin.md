@@ -52,7 +52,10 @@ editing the file — Dalamud rewrites the file when it saves settings:
 2. `/xlplugins` → **Dev Tools** → *Installed Dev Plugins* → enable
    **FFXIV IME Bridge**. It loads immediately and runs the transport ladder.
 3. `/imebridge debug` (alias `/ime debug`) opens the debug window: the
-   **Transport** tab has the ladder, `/imebridge probe` runs it again. Bare
+   **Transport** tab has the ladder, `/imebridge probe` runs it again, and
+   **Copy ladder** puts it on the clipboard for a bug report, the home
+   directory shortened to `~` (Wine hides `HOME` from the game and passes it
+   as `WINEHOMEDIR`; `ProbeReport.ToShareableText`). Bare
    `/imebridge` opens the settings window (below). Every step is also
    written to `~/.xlcore/logs/dalamud.log` as `Transport ladder: …`, and the
    one-line result is printed to chat.

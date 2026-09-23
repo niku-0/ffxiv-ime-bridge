@@ -1,6 +1,6 @@
 # M3.5 — Issue template and support posture
 
-Status: ready-for-agent
+Status: ready-for-human
 Blocked by: 21
 Type: task
 
@@ -71,3 +71,47 @@ and would carry the user's draft.
 **2026-09-23 (from ticket 23):** `AcceptsFeedback: false` is already set,
 in `FfxivImeBridge.json`. `repo.json` is generated from the in-zip
 manifest, so it inherits the value. That bullet is done.
+
+**2026-09-23 — done, one in-game check left.**
+
+- **Copy ladder** sits in the debug window's Transport tab, next to
+  **Run the transport ladder again**. It is disabled while a climb runs,
+  because a half-climbed ladder with no failure yet would copy as a pass.
+  It copies from the steps, so a crashed climb's `crash` step comes along.
+- **Formatting:** `ProbeReport.ToShareableText(home)` is `ToString()` (every
+  step, then the summary) with the home directory replaced by `~`. It
+  matches the Unix spelling and Wine's `Z:` one, with either slash and any
+  case. It only matches a path that starts with the home and ends at a
+  separator, so `/home/ab` leaves `/home/abc` and `/mnt/home/ab` alone.
+  Covered by `ProbeReportTests`.
+- **Where the home comes from:** Windows processes under Wine do not see
+  `HOME`.
+  - Checked with system Wine 11.17 in a throwaway prefix, not the game's:
+    `HOME` is renamed to `WINE_HOST_HOME`, and Wine sets
+    `WINEHOMEDIR=\??\Z:\home\<user>`.
+  - The plugin reads `WINEHOMEDIR` (`ProbeReport.HomeFromWineHomeDir`). The
+    variable is Wine's own and long-standing, and it also covers
+    `/var/home` distributions, which a `/home/*` pattern would miss.
+  - If it is unset, the copy is the plain report.
+- **Not covered:**
+  - Wine's `C:\users\<login>` profile path. No rung prints it; only a
+    crash step's exception text could.
+  - Build-machine source paths in a crash step's stack trace. For releases
+    that is CI.
+- **Templates:** `bug_report.md` asks, in order, for the Copy ladder paste,
+  the setup (plus the plugin version), and what was typed and what
+  appeared. A comment at the top asks people not to attach `dalamud.log`.
+  It never asks for the Native Write **Copy report**. `feature_request.md`
+  is short. Labels are `bug` and `enhancement`.
+- The README's "Reporting a problem" line now points at the template and
+  **Copy ladder**. `docs/dev-plugin.md` mentions the button.
+- `dotnet test`: 311 + 40 passed. Release and Debug builds have 0 warnings.
+
+**Still to do (human, in game):** `/imebridge debug` → Transport → **Copy
+ladder**, then paste it somewhere private.
+- The platform line should read `WINEPREFIX=~/…`. That confirms
+  wine-xiv-staging 10.8 sets `WINEHOMEDIR` as Wine 11 does.
+- If it shows the full path, reopen this ticket. The fallback would be
+  `WINE_HOST_HOME`/`HOME`.
+
+This fits into ticket 27, step 6.

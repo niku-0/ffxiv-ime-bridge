@@ -68,6 +68,12 @@ internal sealed class DebugWindow : Window
     {
         if (ImGui.Button(probe.IsRunning ? "Running…" : "Run the transport ladder again")) probe.Start();
         ImGui.SameLine();
+        // From the steps, not the report: a crashed climb has a "crash" step but no report. Never mid-climb, whose steps would read as a pass.
+        using (ImRaii.Disabled(probe.IsRunning || probe.Steps.IsEmpty))
+        {
+            if (ImGui.Button("Copy ladder")) ImGui.SetClipboardText(new ProbeReport(probe.Steps).ToShareableText(WineHomeDirectory()));
+        }
+        ImGui.SameLine();
         ImGui.TextUnformatted(probe.Report?.Summary ?? (probe.IsRunning ? "Climbing…" : "Not run yet."));
         ImGui.Separator();
 
@@ -88,6 +94,9 @@ internal sealed class DebugWindow : Window
         }
         ImGui.PopTextWrapPos();
     }
+
+    /// <summary>What <b>Copy ladder</b> shortens to <c>~</c>: the game does not see <c>HOME</c> under Wine, which passes the home on as <c>WINEHOMEDIR</c>.</summary>
+    private static string? WineHomeDirectory() => ProbeReport.HomeFromWineHomeDir(Environment.GetEnvironmentVariable("WINEHOMEDIR"));
 
     private void DrawKeyboard()
     {

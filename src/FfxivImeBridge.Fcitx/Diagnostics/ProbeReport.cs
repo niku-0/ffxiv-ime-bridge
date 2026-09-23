@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace FfxivImeBridge.Fcitx.Diagnostics;
 
@@ -39,4 +40,40 @@ public sealed record ProbeReport(ImmutableArray<ProbeStep> Steps, FcitxConnectio
         text.Append(Summary);
         return text.ToString();
     }
+
+    /// <summary>
+    /// <see cref="ToString"/> for pasting into a public issue (ticket 25): the
+    /// home directory, in its Unix spelling and in Wine's <c>Z:</c> one (either
+    /// slash, any case), shortened to <c>~</c>, because the platform rung reports
+    /// <c>WINEPREFIX</c> and that path holds the login name. Only a path that
+    /// starts with the home and stops at a separator matches, so <c>/home/ab</c>
+    /// leaves <c>/home/abc</c> and <c>/mnt/home/ab</c> alone. No home, or
+    /// <c>/</c>, gives the plain report.
+    /// </summary>
+    public string ToShareableText(string? homeDirectory)
+    {
+        var home = homeDirectory?.TrimEnd('/');
+        if (string.IsNullOrEmpty(home)) return ToString();
+        var unix = Regex.Escape(home);
+        var wine = "Z:" + unix.Replace("/", @"[\\/]");
+        return Regex.Replace(ToString(), $@"(?<![\w.\-/\\~])(?:{wine}|{unix})(?![\w.-])", "~", RegexOptions.IgnoreCase);
+    }
+
+    /// <summary>
+    /// The user's Linux home as Wine hands it to Windows processes, which do not
+    /// see <c>HOME</c> itself: <c>WINEHOMEDIR</c> is <c>\??\Z:\home\user</c>, or
+    /// <c>\??\unix\home\user</c> when no <c>Z:</c> drive maps the root. Null for
+    /// anything else.
+    /// </summary>
+    public static string? HomeFromWineHomeDir(string? wineHomeDir)
+    {
+        foreach (var root in WineRoots)
+        {
+            if (wineHomeDir?.StartsWith(root, StringComparison.OrdinalIgnoreCase) == true)
+                return wineHomeDir[root.Length..].Replace('\\', '/').TrimEnd('/');
+        }
+        return null;
+    }
+
+    private static readonly string[] WineRoots = [@"\??\Z:", @"\??\unix"];
 }
