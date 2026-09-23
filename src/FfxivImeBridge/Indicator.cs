@@ -31,7 +31,7 @@ internal sealed class Indicator(Bridge bridge, IGameGui gui, ConfigStore config,
 {
     private const float Gap = 4f;
     /// <summary>Where the badge starts relative to the text input's text edge, at 100 % (the in-game check asked for it).</summary>
-    private const float LeftOfTextEdge = 5f;
+    private const float LeftOfTextEdge = 2f;
     private static readonly Vector4 Ink = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 Shadow = new(0f, 0f, 0f, 0.85f);
     private static readonly Vector4 Warning = new(1f, 0.55f, 0.4f, 1f);
@@ -42,7 +42,7 @@ internal sealed class Indicator(Bridge bridge, IGameGui gui, ConfigStore config,
     private const string FrameBadge = "badge-frame.png";
     private static readonly Rect FrameInterior = new(2f, 2f, 19f, 20f);
     /// <summary>The texture's size on screen at 100 %, as a share of its pixels: the crop read too large in-game, twice by about 20 %.</summary>
-    private const float BadgeScale = 1f / 1.44f;
+    private const float BadgeScale = 1f / 1.50f;
     /// <summary>The glyph's edges softened: copies this far off in each direction under it, at <see cref="BadgeSoftenAlpha"/>.</summary>
     private const float BadgeSoften = 0.5f;
     private const float BadgeSoftenAlpha = 0.3f;
