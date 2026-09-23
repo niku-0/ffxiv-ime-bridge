@@ -1,6 +1,6 @@
 # M3.3 — repo.json and the release workflow
 
-Status: ready-for-human
+Status: resolved
 Blocked by: 21, 22
 Type: task
 
@@ -133,3 +133,28 @@ Releasing is then: bump `<Version>`, commit, tag `v<Version>`, push both.
    **Copy ladder** button, lands. Ticket 27 installs "the version shown
    … matches the tag (`0.1.0`)", and a 0.1.0 without it would force a
    0.1.1 first.
+
+**2026-09-23 — accepted.**
+
+- **Mismatch path:** a `v0.0.1` tag against `<Version>0.1.0</Version>`
+  failed at step 1. The tag was deleted afterwards.
+- **First `v0.1.0` run:** it failed at `dotnet test` with
+  `KeyboardGateTests.A_reply_resets_the_timeout_count`.
+  - The test's "late but in time" reply was a `Task.Delay(1)`. On the
+    runner that outlasted the 20 ms test timeout, so it counted as a third
+    timeout.
+  - The gate waits the same way on an already-completed reply, so the test
+    now uses `Task.FromResult(true)` (`e33d2d6`).
+  - Nothing had been released and `repo.json` was not written. The tag was
+    moved to the fix, which was safe because the repository is private.
+- **Second run:** green. It confirms:
+  - Release `v0.1.0` has `FfxivImeBridge.zip` attached, with the notes line
+    "Built against Dalamud 15.0.3.5+e81744f6… (release branch)".
+  - `repo.json` on `main` (`9d1cd85`, committed by `github-actions[bot]`
+    in UTC) has `0.1.0.0`, API 15, `AcceptsFeedback: false`, and both
+    links pointing at `releases/download/v0.1.0/FfxivImeBridge.zip`.
+  - The zip's `FfxivImeBridge.json` is identical to that `repo.json`
+    entry minus the two `DownloadLink*` fields, checked with `jq -S` and
+    `diff`. The zip root is flat: the DLLs, the manifest and `Assets/`.
+- The anonymous fetch through the raw URL is still ticket 27's, after the
+  flip to public.
