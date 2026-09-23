@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Same TFM as the plugin so it can be referenced; only Dalamud-free types are exercised (plus the IPluginConfiguration
+         interface, which is why Dalamud.dll is copied next to the tests), so the tests run on the host. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Platforms>x64</Platforms>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/FfxivImeBridge/FfxivImeBridge.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copied to the output so Configuration (an IPluginConfiguration) loads on the host; Newtonsoft.Json is
+         the serializer Dalamud saves plugin configs with, referenced at the version it ships. -->
+    <Reference Include="Dalamud">
+      <HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(DalamudLibPath)Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Authors>niku-0</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Reference DLLs shipped with the Dalamud install. XIVLauncher.Core keeps them under ~/.xlcore. -->
+    <DalamudLibPath Condition="'$(DalamudLibPath)' == '' and '$(DALAMUD_HOME)' != ''">$(DALAMUD_HOME)/</DalamudLibPath>
+    <DalamudLibPath Condition="'$(DalamudLibPath)' == '' and '$(HOME)' != ''">$(HOME)/.xlcore/dalamud/Hooks/dev/</DalamudLibPath>
+    <DalamudLibPath Condition="'$(DalamudLibPath)' == '' and '$(AppData)' != ''">$(AppData)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+  </PropertyGroup>
+</Project>
