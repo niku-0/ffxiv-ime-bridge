@@ -199,7 +199,7 @@ public sealed class KeyboardGateTests
         Activate();
         Fcitx.Replies.Enqueue(Silence());
         Fcitx.Replies.Enqueue(Silence());
-        Fcitx.Replies.Enqueue(Task.Delay(1).ContinueWith(_ => true)); // late but in time
+        Fcitx.Replies.Enqueue(Task.FromResult(true)); // not a timer: a slow CI runner once let a 1 ms delay outlast the 20 ms timeout
         Fcitx.Replies.Enqueue(Silence());
         Fcitx.Replies.Enqueue(Silence());
 
