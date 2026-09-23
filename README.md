@@ -39,15 +39,16 @@ with the plugin's input.
 
 ## Install
 
-1. In game, open `/xlsettings` → **Experimental** → *Custom Plugin
-   Repositories*, and add this URL:
+1. In game, open **Dalamud Settings** (or `/xlsettings`) → **Experimental**
+   → *Custom Plugin Repositories*, and add this URL:
 
    ```
    https://raw.githubusercontent.com/niku-0/ffxiv-ime-bridge/main/repo.json
    ```
 
-   Tick **Enabled** next to it, then **Save and Close**.
-2. Open `/xlplugins`, search for **FFXIV IME Bridge** and install it.
+   Click the **+** next to it, tick **Enabled**, then **Save** at the bottom.
+2. Open **Dalamud Plugins** (or `/xlplugins`), search for **FFXIV IME
+   Bridge** and install it.
 
 When it loads, chat says `IME Bridge: fcitx5 reachable, forwarding off` (on
 later loads, forwarding is as you left it). If it says `fcitx5 not reachable,

@@ -1,6 +1,6 @@
 # M3.7 — M3 acceptance: a stranger can install this
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 21, 22, 23, 24, 25
 Type: task
 
@@ -45,3 +45,13 @@ tick M3 in the spec. The repository is already public from step 2; a
 failure after that is fixed in the open, like any other bug.
 
 ## Comments
+
+- 2026-09-23 (human): all steps pass. **Step 6 finding:** the README's
+  Install steps did not match the installer: the menus are reachable as
+  Dalamud Settings / Dalamud Plugins, not only by command, the URL is added
+  with the **+** button, and the button at the bottom is **Save**, not
+  *Save and Close*. README corrected.
+- 2026-09-23 (agent): closed out from the run above; the README fix is
+  wording only, so M3 is ticked in the spec. Checked after the flip: the
+  repository reports `PUBLIC`, and the raw `repo.json` URL and the
+  `v0.1.0` asset link both return 200 to an anonymous `curl`.

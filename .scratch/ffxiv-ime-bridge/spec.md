@@ -330,14 +330,17 @@ and of a dead connection).
    fixed and confirmed the same day (ticket 20, five in-game rounds: the
    splice edits at the module's split, only `UpdateTextSelection` draws
    the cursor, and its strings must be the raw text).
-3. **M3 — Public release** (planned 2026-09-22, grilled): 21 the public
+3. ~~**M3 — Public release** (planned 2026-09-22, grilled): 21 the public
    repository; 22 `Dalamud.NET.Sdk`; 23 `repo.json` and the release
    workflow; 24 README; 25 issue template and support posture; 26 icon and
    screenshots (human, not a blocker); 27 acceptance — a stranger installs
    it from the published repository. Third-party repo conventions confirmed
    against goatcorp sources 2026-09-22; see ticket 23. Plan reviewed
    2026-09-23 (going public inside 27, a copyable ladder report). Done when
-   27 passes; the repository flips to public partway through 27.
+   27 passes; the repository flips to public partway through 27.~~ —
+   done, accepted 2026-09-23 (ticket 27): installed from the public
+   `repo.json` as a user would; its one finding, the README's Install
+   wording, corrected the same day.
 4. **M4 — Stretch**: ibus; fields beyond chat; Japanese UI strings.
 
 ## Key risks
