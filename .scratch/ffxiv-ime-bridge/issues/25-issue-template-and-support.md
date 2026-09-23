@@ -1,6 +1,6 @@
 # M3.5 — Issue template and support posture
 
-Status: ready-for-human
+Status: resolved
 Blocked by: 21
 Type: task
 
@@ -115,3 +115,7 @@ ladder**, then paste it somewhere private.
   `WINE_HOST_HOME`/`HOME`.
 
 This fits into ticket 27, step 6.
+
+**2026-09-23 — confirmed in-game.** Copy ladder on wine-xiv-staging 10.8
+gives `WINEPREFIX=~/.xlcore/wineprefix`, so `WINEHOMEDIR` is set there as
+in Wine 11. No fallback needed.
