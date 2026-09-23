@@ -7,17 +7,19 @@ dotnet build src/FfxivImeBridge            # → src/FfxivImeBridge/bin/Debug/Ff
 dotnet build src/FfxivImeBridge -c Release # + bin/Release/FfxivImeBridge/latest.zip (DalamudPackager)
 ```
 
-The plugin project (`net10.0-windows`) references `Dalamud.dll`,
-`Dalamud.Bindings.ImGui.dll`, `FFXIVClientStructs.dll` and
-`InteropGenerator.Runtime.dll` from `$DALAMUD_HOME`, else
-`~/.xlcore/dalamud/Hooks/dev/` (XIVLauncher.Core), else
-`%AppData%\XIVLauncher\addon\Hooks\dev\`. Nothing from there is copied to the
-output; `FfxivImeBridge.Fcitx.dll` and `Tmds.DBus.Protocol.dll` are, because
-Dalamud resolves a plugin's dependencies from its own folder.
+The plugin project builds on `Dalamud.NET.Sdk`, which references Dalamud's
+assemblies from `$DALAMUD_HOME`, else `~/.xlcore/dalamud/Hooks/dev/`
+(XIVLauncher.Core), and fails the build if that folder is missing. Nothing
+from there is copied to the output; `FfxivImeBridge.Fcitx.dll` and
+`Tmds.DBus.Protocol.dll` are, because Dalamud resolves a plugin's
+dependencies from its own folder. The tests copy `Dalamud.dll` from the same
+place.
 
-`FfxivImeBridge.json` is the manifest. `DalamudApiLevel` must equal the
-running Dalamud's major version (15 for 15.0.3.x); DalamudPackager copies it
-to the output with `AssemblyVersion` filled in.
+`FfxivImeBridge.json` is the manifest. The packager bundled with the SDK
+copies it to the output and fills in `InternalName`, `AssemblyVersion` (from
+`<Version>` in the csproj) and `DalamudApiLevel` (15, which must equal the
+running Dalamud's major version). Dalamud no longer replaces the installed
+manifest with the `repo.json` entry, so the two must agree by hand.
 
 ## Load it as a dev plugin (XIVLauncher.Core, Dalamud 15)
 

@@ -1,6 +1,6 @@
 # M3.2 — Move to Dalamud.NET.Sdk
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 21
 Type: task
 
@@ -72,3 +72,47 @@ five-minute experiment with an unambiguous answer, not a leap.
   is 15.
 
 ## Comments
+
+**2026-09-23 — done.**
+
+- **`DALAMUD_HOME`:** the SDK 15 `Sdk.props` settles it. On Linux it
+  defaults to `$(HOME)/.xlcore/dalamud/Hooks/dev/`, and a set
+  `DALAMUD_HOME` overrides that. `DALAMUD_HOME=/nonexistent` fails the
+  build with `Dalamud installation not found at /nonexistent/`, so the
+  variable really is read.
+- **Manifest fields:** they stay in `FfxivImeBridge.json`.
+  - When the SamplePlugin first moved to SDK 15 (`5bde722`), its json
+    held `Author`, `Name`, `Punchline`, `Description`,
+    `ApplicableVersion` and `Tags`. A later commit (`586b87d`) moved them
+    into csproj properties.
+  - The packager supports both. Its `auto` mode reads the json first and
+    ignores the manifest properties in the csproj, so the csproj
+    `<Description>` stays assembly metadata only.
+  - The user confirmed on 2026-09-23 that the M2 text is final (it may
+    still change) and asked which is better. The json is kept on that
+    recommendation.
+  - Reasons: the prose is easier to edit as a json string than as an
+    XML property, where line breaks and indentation are taken literally.
+    It also has the same shape as `repo.json`, which it must match by
+    hand.
+  - `Punchline` and `Description` are unchanged.
+- **Json changes:** `InternalName` and `DalamudApiLevel` are removed from
+  the json. The packager sets `InternalName` from the assembly, and its
+  `Manifest.DalamudApiLevel` defaults to 15. `RepoUrl` is added.
+- **Csproj:** the csproj drops the properties the SDK already sets (TFM,
+  x64, unsafe code, copy-local, reference assembly, output path).
+  `packages.lock.json` is committed because the SDK turns on
+  `RestorePackagesWithLockFile`.
+- **Tests:** `DalamudLibPath` now lives in the test csproj, its only
+  user. It copies the SDK's own per-OS lookup, where a set
+  `DALAMUD_HOME` always wins, so the tests find the same Dalamud as the
+  plugin.
+- **Checks:** `dotnet build -c Release` gives 0 warnings.
+  - `latest.zip` holds the DLLs, `deps.json` and `FfxivImeBridge.json` at
+    its root (plus the plugin's own `Assets/`).
+  - The manifest has `Author: niku-0`, `DalamudApiLevel: 15` and
+    `AssemblyVersion: 0.1.0.0`.
+  - `dotnet test` passes 311 + 21 tests with `DALAMUD_HOME` set and
+    with it unset.
+- **For ticket 25:** the generated manifest still has
+  `"AcceptsFeedback": true`.
