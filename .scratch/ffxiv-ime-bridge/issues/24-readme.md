@@ -1,6 +1,6 @@
 # M3.4 — README
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 22, 23
 Type: task
 
@@ -47,3 +47,22 @@ Someone who has never seen the repo can install the plugin and type a
 Japanese sentence using only this file. Ticket 27 tests exactly that.
 
 ## Comments
+
+**2026-09-23 — written.**
+
+- **Mozc is a requirement, not just fcitx5.** The load-time ladder includes
+  the `input-method` rung, which switches its test context to `mozc`; without
+  Mozc in the group the plugin is Inert (`Ladder stopped at: input-method`).
+  The README says so under Requirements and uses that line as the
+  troubleshooting example.
+- **First run needs fcitx5's own switch key.** The plugin's Input Context
+  starts on the keyboard layout (`A`), so Use tells the reader to press
+  Ctrl+Space (or their configured key) in the chat box to get `あ`.
+- **Reporting a problem** asks for what `/imebridge probe` printed. That is
+  only the one-line summary; ticket 25 replaces the line with the template
+  and the **Copy ladder** button.
+- **Unverified from the repo:** the Dalamud UI labels in Install
+  (*Custom Plugin Repositories*, **Enabled**, **Save and Close**) are from
+  memory of Dalamud's settings window. Ticket 27, step 4, is where they are
+  checked; the `repo.json` URL answers only after ticket 23's first release.
+- No screenshots until ticket 26.
