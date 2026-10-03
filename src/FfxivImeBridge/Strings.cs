@@ -17,6 +17,7 @@ internal static class Strings
     // Chat lines and toasts
     public static string ForwardingFlipped(bool on) => Prefix + (on ? "forwarding on" : "forwarding off");
     public const string NotReachable = Prefix + "fcitx5 not reachable, disabled";
+    public static string NativePathTakesKeys(string xmodifiers) => Prefix + $"XMODIFIERS={xmodifiers} lets fcitx5 take your keys before the plugin sees them. Before your next launch, tick Settings → Troubleshooting → Hack: XMODIFIERS=\"@im=null\" in XIVLauncher";
     public static string Reachable(bool forwarding) => Prefix + $"fcitx5 reachable, forwarding {(forwarding ? "on" : "off")}";
     public const string StillConnecting = Prefix + "still connecting to fcitx5";
     public const string DegradedBusLost = Prefix + "fcitx5 left the bus, forwarding degraded";

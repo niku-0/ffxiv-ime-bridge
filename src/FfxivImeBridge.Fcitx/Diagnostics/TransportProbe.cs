@@ -128,10 +128,12 @@ public static class TransportProbe
         {
             var raw = settings.Address ?? Environment.GetEnvironmentVariable("DBUS_SESSION_BUS_ADDRESS");
             var runtimeDir = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") ?? "unset";
+            // Not a rung: recorded so a report shows whether fcitx5's XIM frontend is attached to the game window (issue #3).
+            var xmodifiers = Environment.GetEnvironmentVariable("XMODIFIERS") ?? "unset";
             if (string.IsNullOrEmpty(raw))
-                throw new InvalidOperationException($"DBUS_SESSION_BUS_ADDRESS is not visible to this process (XDG_RUNTIME_DIR={runtimeDir}).");
+                throw new InvalidOperationException($"DBUS_SESSION_BUS_ADDRESS is not visible to this process (XDG_RUNTIME_DIR={runtimeDir}; XMODIFIERS={xmodifiers}).");
             address = new SessionBusAddress(raw, null, null);
-            return $"DBUS_SESSION_BUS_ADDRESS={raw}; XDG_RUNTIME_DIR={runtimeDir}";
+            return $"DBUS_SESSION_BUS_ADDRESS={raw}; XDG_RUNTIME_DIR={runtimeDir}; XMODIFIERS={xmodifiers}";
         }
 
         private string ParseAddress()

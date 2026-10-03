@@ -8,13 +8,12 @@ to send with Enter.
 
 ## Why
 
-On Linux the game runs under Wine. Wine translates the desktop's input-method
-composition into the Windows `WM_IME_*` messages the game expects, and for a
-game that draws its own chat box and candidate list that translation is
-broken: Japanese typed into the chat box comes out as `???` or mojibake, even
-though the same input method works in every other Linux app.
+On Linux the game runs under Wine. When `XMODIFIERS` points Wine at fcitx5,
+the game window gets fcitx5's own composition window: Japanese can be typed,
+but what you are composing and the candidates float in a corner of the
+screen, away from the chat box, instead of appearing where you type.
 
-This plugin does not try to fix Wine. It goes around it: it talks to fcitx5
+This plugin does not go through Wine for this. It talks to fcitx5
 directly over D-Bus, sends it the keys you type into the chat box, draws the
 composition and candidates itself, and writes the committed text into the
 chat box. It never sends chat; Enter is still yours.
@@ -29,13 +28,18 @@ chat box. It never sends chat; Enter is still yours.
 
 On Windows the plugin loads and does nothing.
 
-### No environment setup
+### Keep fcitx5's XIM away from the game
 
-Leave `XMODIFIERS`, `GTK_IM_MODULE`, `QT_IM_MODULE` and your launcher's
-environment as they are. The plugin does not use Wine's input-method path at
-all, so there is nothing there to configure. fcitx5's own XIM and Wayland
-frontends still see the game window, but in testing they never interfered
-with the plugin's input.
+If `XMODIFIERS` is set in your environment (`@im=fcitx`, as the Arch wiki's
+fcitx5 setup does), Wine connects the game window to fcitx5 over XIM, and
+fcitx5 then takes your keys before the plugin sees them: Ctrl+Space switches
+fcitx5's own popup to Mozc instead of the plugin, and the Indicator stays `A`.
+In XIVLauncher, open **Settings → Troubleshooting** and tick **Hack:
+XMODIFIERS="@im=null"**. This applies to the game only. Every other app keeps
+fcitx5. If `XMODIFIERS` is set, the plugin says so in chat when it loads.
+
+`GTK_IM_MODULE` and `QT_IM_MODULE` don't matter to the game; leave them as
+they are.
 
 ## Install
 
@@ -63,7 +67,9 @@ disabled` instead, see [Troubleshooting](#troubleshooting).
 3. The Indicator shows `A` at first: the plugin's input starts on your
    keyboard layout, like any new fcitx5 window. Switch to Mozc with fcitx5's
    own switch key (Ctrl+Space by default); it turns to `あ`. If it stays
-   `A`, check that key under fcitx5 Configuration → Global Options.
+   `A` and fcitx5's own popup appears instead, see [Keep fcitx5's XIM away
+   from the game](#keep-fcitx5s-xim-away-from-the-game); otherwise check
+   that key under fcitx5 Configuration → Global Options.
 4. Type. The composition appears at the cursor with Mozc's candidates.
    Space converts, the arrow keys and Space move through candidates, and a
    click on a candidate picks it. Enter commits the text into the chat box.

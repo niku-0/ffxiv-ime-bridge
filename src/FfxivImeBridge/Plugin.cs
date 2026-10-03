@@ -87,7 +87,12 @@ public sealed class Plugin : IDalamudPlugin
         commands.AddHandler(CommandName, info);
         commands.AddHandler(CommandAlias, new CommandInfo(OnCommand) { ShowInHelp = false });
 
-        if (wine) bridge.Start();
+        if (wine)
+        {
+            bridge.Start();
+            var xmodifiers = Environment.GetEnvironmentVariable("XMODIFIERS");
+            if (NativePath.TakesKeys(xmodifiers)) chat.Print(Strings.NativePathTakesKeys(xmodifiers!));
+        }
     }
 
     private void OnCommand(string command, string arguments)
