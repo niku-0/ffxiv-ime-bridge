@@ -270,6 +270,30 @@ public sealed class KeyboardGateTests
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void The_toggle_key_held_while_alt_is_let_go_and_pressed_again_stays_the_chord_until_its_release(bool forwarding)
+    {
+        // Under Mozc's jp layout scancode 0x29 is Hankaku/Zenkaku: a plain § asked would flip Mozc to direct input.
+        Activate();
+        session.Forwarding = forwarding;
+        Fcitx.Handled = true;
+        keyState.Modifiers = new Modifiers { Alt = true };
+        Assert.Equal(GateRule.Toggle, Rule(SysDown(VkOem5, ScSection)));
+
+        keyState.Modifiers = default;
+        var plainRepeat = gate.Decide(Down(VkOem5, ScSection, repeat: true), chatBoxFocused: true);
+        Assert.Equal((GateVerdict.Swallow, GateRule.FollowsPress), (plainRepeat.Verdict, plainRepeat.Rule));
+        Assert.Equal(GateVerdict.Swallow, Verdict(Char('§', ScSection)));
+
+        keyState.Modifiers = new Modifiers { Alt = true };
+        var chordRepeat = gate.Decide(SysDown(VkOem5, ScSection, repeat: true), chatBoxFocused: true);
+        Assert.Equal((GateVerdict.Swallow, GateRule.FollowsPress), (chordRepeat.Verdict, chordRepeat.Rule));
+        Assert.Equal(GateVerdict.Swallow, Verdict(SysUp(VkOem5, ScSection)));
+        Assert.Empty(Fcitx.Asked);
+    }
+
     [Fact]
     public void The_toggle_key_is_matched_by_scancode_so_the_layouts_vk_does_not_matter()
     {

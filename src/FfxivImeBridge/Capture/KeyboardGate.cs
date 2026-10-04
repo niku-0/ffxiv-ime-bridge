@@ -164,12 +164,14 @@ internal sealed class KeyboardGate
             return new GateDecision(GateVerdict.Swallow, GateRule.Captured, keyClass);
         }
 
+        // Held, the chord is one toggle, not a flicker, whatever its modifiers do meanwhile: the repeats,
+        // chars and release are eaten. A plain repeat asked would reach Mozc, whose jp layout reads 0x29 as Hankaku/Zenkaku.
+        if (held.Toggled && message.IsRepeat) return new GateDecision(GateVerdict.Swallow, GateRule.FollowsPress, keyClass);
+
         if (chatBoxFocused && ToggleKey.Matches(modifiers.For(message), message.Set1ScanCode))
         {
-            // Held, the chord is one toggle, not a flicker; the repeats, chars and release are still eaten.
-            var rule = held.Toggled && message.IsRepeat ? GateRule.FollowsPress : GateRule.Toggle;
             presses[vk] = new Press(GateVerdict.Swallow, Toggled: true);
-            return new GateDecision(GateVerdict.Swallow, rule, keyClass);
+            return new GateDecision(GateVerdict.Swallow, GateRule.Toggle, keyClass);
         }
 
         if (!chatBoxFocused || Acting is not { } session)
@@ -307,7 +309,7 @@ internal sealed class KeyboardGate
 
     /// <summary>What is known about a key that is down: where it went, and the press fcitx5 was told about, if any.</summary>
     /// <param name="Provisional">A printing key whose char has not come yet: swallowed so far, the char decides.</param>
-    /// <param name="Toggled">The toggle chord: its repeats must not toggle again.</param>
+    /// <param name="Toggled">The toggle chord: its repeats follow it until its release, whatever the modifiers do meanwhile.</param>
     /// <param name="Untouched">The gate was not acting at the press: its chars and its release are <see cref="GateRule.Inactive"/> too, so nothing typed past the gate is traced (ticket 18).</param>
     private readonly record struct Press(GateVerdict Verdict, bool Provisional = false, SentKey? Sent = null, bool Toggled = false, bool Untouched = false);
 }
