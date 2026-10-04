@@ -4,9 +4,7 @@ namespace FfxivImeBridge.Session;
 
 /// <summary>
 /// What one climb of the Transport Ladder yields: the session and the bus
-/// connection under it. The transport is only disposable here so the tests
-/// can stand one in; the one caller that needs the real connection (the
-/// debug aid that switches the input method) knows it is an <c>FcitxConnection</c>.
+/// connection under it, disposed with the session.
 /// </summary>
 internal sealed record OpenedSession(ForwardingSession Session, IDisposable Transport);
 
@@ -80,9 +78,6 @@ internal sealed class SessionLifecycle : IDisposable
 
     /// <summary>The live session; null while an attempt runs or after one failed (Inert).</summary>
     public ForwardingSession? Session => Volatile.Read(ref opened)?.Session;
-
-    /// <summary>The connection under the live session, for the debug aid that needs it.</summary>
-    public IDisposable? Transport => Volatile.Read(ref opened)?.Transport;
 
     /// <summary>An attempt is climbing the ladder.</summary>
     public bool Opening => attempt is { IsCompleted: false };

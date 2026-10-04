@@ -11,8 +11,7 @@ internal static class Strings
         + "/imebridge indicator [on|off] – show or hide the Indicator\n"
         + "/imebridge reconnect – reconnect to fcitx5 from scratch\n"
         + "/imebridge probe – test the connection to fcitx5 without changing anything\n"
-        + "/imebridge debug – open the debug window\n"
-        + "/imebridge im [name] – debug: switch the chat box's input method after 3 s (default: mozc)";
+        + "/imebridge debug – open the debug window";
 
     // Chat lines and toasts
     public static string ForwardingFlipped(bool on) => Prefix + (on ? "forwarding on" : "forwarding off");
@@ -25,9 +24,6 @@ internal static class Strings
     public const string DegradedConnectionLost = Prefix + "lost the connection to fcitx5, forwarding degraded";
     public static string Overflow(string detail) => Prefix + "the committed text does not fit: " + detail;
     public static string ProbeResult(string summary) => Prefix + summary;
-    public const string NoLiveConnection = Prefix + "no live connection";
-    public static string SwitchingInputMethod(string uniqueName, TimeSpan delay) => Prefix + $"switching the focused context to {uniqueName} in {delay.TotalSeconds:0}s — click into the Chat Box";
-    public const string NothingSwitched = Prefix + "the Chat Box was not focused; nothing switched";
 
     // Settings window
     public const string SettingsTitle = "IME Bridge settings";

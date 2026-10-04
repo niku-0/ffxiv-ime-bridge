@@ -20,20 +20,15 @@ internal sealed class Bridge : IDisposable
 {
     private readonly IFramework framework;
     private readonly IGameGui gui;
-    private readonly IPluginLog log;
-    private readonly IChatGui chat;
     private readonly IToastGui toast;
     private readonly NativeWriter writer;
     private readonly ConfigStore config;
     private readonly SessionLifecycle lifecycle;
-    private readonly CancellationTokenSource disposal = new();
 
     public Bridge(IFramework framework, IGameGui gui, IPluginLog log, IChatGui chat, IToastGui toast, ProbeRunner probe, NativeWriter writer, ConfigStore config)
     {
         this.framework = framework;
         this.gui = gui;
-        this.log = log;
-        this.chat = chat;
         this.toast = toast;
         this.writer = writer;
         this.config = config;
@@ -76,34 +71,6 @@ internal sealed class Bridge : IDisposable
         }
     }
 
-    /// <summary>
-    /// Debug aid (ticket 05's in-game check): switch the input method of the
-    /// <em>focused</em> context after a delay, which is long enough to click back
-    /// into the Chat Box (sending the command unfocused it). Since ticket 07
-    /// fcitx5's own trigger key does the same through the Gate; a switch from
-    /// the host lands on the host's focused window instead.
-    /// </summary>
-    public void SwitchInputMethodAfter(string uniqueName, TimeSpan delay)
-    {
-        if (lifecycle.Transport is not FcitxConnection live)
-        {
-            toast.ShowError(Strings.NoLiveConnection);
-            return;
-        }
-        chat.Print(Strings.SwitchingInputMethod(uniqueName, delay));
-        framework.RunOnTick(() =>
-        {
-            if (Session is not { ChatBoxFocused: true })
-            {
-                chat.Print(Strings.NothingSwitched);
-                return;
-            }
-            live.SetCurrentInputMethodAsync(uniqueName).ContinueWith(
-                t => log.Warning("Session: SetCurrentIM({Name}) failed: {Error}", uniqueName, t.Exception?.InnerException?.Message ?? "unknown"),
-                CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
-        }, delay, cancellationToken: disposal.Token);
-    }
-
     /// <summary>The tick: Chat Box focus to the lifecycle (an automatic Reconnect) and the session, the session's own tick, and the tick's drain — a Commit that arrived out of band (a reply after its timeout, fcitx5 committing on its own).</summary>
     private void OnUpdate(IFramework _)
     {
@@ -139,9 +106,7 @@ internal sealed class Bridge : IDisposable
     public void Dispose(TimeSpan budget)
     {
         framework.Update -= OnUpdate;
-        disposal.Cancel();
         lifecycle.Dispose(budget);
-        disposal.Dispose();
     }
 }
 

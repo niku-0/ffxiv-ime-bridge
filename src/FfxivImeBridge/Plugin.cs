@@ -73,7 +73,7 @@ public sealed class Plugin : IDalamudPlugin
         var wine = Util.IsWine();
         if (wine) capture = new KeyboardCapture(bridge, interop, gui, framework, log, config, () => overlay.LastPlan);
         settingsWindow = new SettingsWindow(bridge, capture, config);
-        debugWindow = new DebugWindow(probe, bridge, capture, writer, overlay, gui, log);
+        debugWindow = new DebugWindow(probe, bridge, capture, writer, overlay);
         windows.AddWindow(settingsWindow);
         windows.AddWindow(debugWindow);
 
@@ -99,7 +99,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         var (word, rest) = SplitCommand(arguments);
 
-        switch (word, rest.ToLowerInvariant())
+        switch (word, rest)
         {
             case ("probe", _):
                 probe.Start();
@@ -115,9 +115,6 @@ public sealed class Plugin : IDalamudPlugin
                 config.Current.ShowIndicator = OnOff(state) ?? !config.Current.ShowIndicator;
                 config.Save();
                 break;
-            case ("im", var name):
-                bridge.SwitchInputMethodAfter(name.Length > 0 ? name : "mozc", TimeSpan.FromSeconds(3));
-                break;
             case ("debug", _):
                 OpenDebugWindow();
                 break;
@@ -130,14 +127,14 @@ public sealed class Plugin : IDalamudPlugin
     /// <summary><c>on</c>/<c>off</c> as a bool; anything else (usually nothing) means "flip".</summary>
     private static bool? OnOff(string argument) => argument switch { "on" => true, "off" => false, _ => null };
 
-    /// <summary>The first word lower-cased, and the rest verbatim (an input method name keeps its case).</summary>
+    /// <summary>The first word and the rest, both lower-cased.</summary>
     private static (string Word, string Arguments) SplitCommand(string arguments)
     {
-        var trimmed = arguments.Trim();
+        var trimmed = arguments.Trim().ToLowerInvariant();
         var space = trimmed.IndexOf(' ');
         return space < 0
-            ? (trimmed.ToLowerInvariant(), "")
-            : (trimmed[..space].ToLowerInvariant(), trimmed[(space + 1)..].Trim());
+            ? (trimmed, "")
+            : (trimmed[..space], trimmed[(space + 1)..].Trim());
     }
 
     private void OpenSettingsWindow() => settingsWindow.IsOpen = true;

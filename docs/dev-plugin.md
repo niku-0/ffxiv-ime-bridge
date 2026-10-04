@@ -153,10 +153,6 @@ only shows a toast (see Reconnect below).
   hence the shipped crop.
   `/imebridge indicator [on|off]` (or the settings window) hides it for a
   vanilla look; the choice is saved.
-- Until ticket 07 forwards keys, Ctrl+Space cannot reach the context, and a
-  switch from a host terminal lands on the terminal's own context. To test
-  the `あ` glyph: `/imebridge im` (optionally a name; default `mozc`) waits
-  3 s, click back into the Chat Box, and the focused context is switched.
 - The Keyboard tab's first line is the session state (forwarding, degraded,
   gate, input method, glyph); **Copy trace** puts it at the top of the text.
   Session events go to `dalamud.log` as `Session: …`.
@@ -380,14 +376,7 @@ until you press Enter yourself.
   puts both on the clipboard as text, **Copy report** the report alone.
   **Show cursor markers** draws a red line at the input's cursor node and a
   blue one at text node + measured width so both can be compared with the
-  real caret. **Dump input nodes** (M2.4) writes the ChatLog addon's whole
-  node tree, one line per node, to the clipboard, to `dalamud.log` at Debug
-  level as `Node dump: …` and to the tab: id, type, screen box, visibility,
-  alpha, flags, timeline label; a text node's string, font type/size, colours and
-  edge/glow flags; an image or nine-grid node's part, UV rectangle, asset
-  and texture path (`UldAsset → AtkTexture.Resource → TexFileResourceHandle
-  → FileName`); a component's type. The text input's component, text and
-  cursor nodes and the channel label are marked `<<`. Reads only.
+  real caret.
 - Every write also goes to `dalamud.log` as `Native Write: …`: at
   Information the outcome, where it went, the byte and code-point counts
   before and after, the cursor indices and whether the text held at the next

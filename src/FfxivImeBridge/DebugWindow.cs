@@ -3,7 +3,6 @@ using System.Text;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using Dalamud.Plugin.Services;
 using FfxivImeBridge.Capture;
 using FfxivImeBridge.Fcitx.Diagnostics;
 using FfxivImeBridge.NativeWrite;
@@ -11,7 +10,7 @@ using FfxivImeBridge.Rendering;
 
 namespace FfxivImeBridge;
 
-/// <summary>The <c>/imebridge debug</c> window: the transport ladder (M0.2), the keyboard Gate (M0.3, M1.3) with the composition snapshot (M1.4), and the Chat Box with the last Native Write (M0.4, M1.5), the node dump (M2.4) and the Preedit's placement (M2.5).</summary>
+/// <summary>The <c>/imebridge debug</c> window: the transport ladder (M0.2), the keyboard Gate (M0.3, M1.3) with the composition snapshot (M1.4), and the Chat Box with the last Native Write (M0.4, M1.5) and the Preedit's placement (M2.5).</summary>
 internal sealed class DebugWindow : Window
 {
     private static readonly Vector4 Passed = new(0.55f, 0.9f, 0.55f, 1f);
@@ -25,20 +24,15 @@ internal sealed class DebugWindow : Window
     private readonly KeyboardCapture? capture;
     private readonly NativeWriter writer;
     private readonly CompositionOverlay overlay;
-    private readonly IGameGui gui;
-    private readonly IPluginLog log;
     private bool showCursorMarkers;
-    private string? nodeDump;
 
-    public DebugWindow(ProbeRunner probe, Bridge bridge, KeyboardCapture? capture, NativeWriter writer, CompositionOverlay overlay, IGameGui gui, IPluginLog log) : base(Strings.DebugTitle + "###FfxivImeBridgeDebug")
+    public DebugWindow(ProbeRunner probe, Bridge bridge, KeyboardCapture? capture, NativeWriter writer, CompositionOverlay overlay) : base(Strings.DebugTitle + "###FfxivImeBridgeDebug")
     {
         this.probe = probe;
         this.bridge = bridge;
         this.capture = capture;
         this.writer = writer;
         this.overlay = overlay;
-        this.gui = gui;
-        this.log = log;
         Size = new Vector2(720, 420);
         SizeCondition = ImGuiCond.FirstUseEver;
     }
@@ -161,21 +155,9 @@ internal sealed class DebugWindow : Window
         if (ImGui.Button("Copy readout")) ImGui.SetClipboardText(ChatBoxReadoutText(readout));
         ImGui.SameLine();
         ImGui.Checkbox("Show cursor markers", ref showCursorMarkers);
-        ImGui.SameLine();
-        if (ImGui.Button("Dump input nodes")) DumpInputNodes();
-        ImGui.TextDisabled("Readout and the last Native Write as text (ImGui text cannot be selected). Red line: the input's cursor node; blue: text node + measured width. The dump walks the ChatLog addon's nodes to the clipboard and, at Debug level, to the log.");
+        ImGui.TextDisabled("Readout and the last Native Write as text (ImGui text cannot be selected). Red line: the input's cursor node; blue: text node + measured width.");
         if (showCursorMarkers && state != null) DrawCursorMarkers(state);
         ImGui.Separator();
-
-        if (nodeDump != null)
-        {
-            ImGui.TextUnformatted("Last node dump (also on the clipboard, and in dalamud.log at Debug level as \"Node dump: …\"):");
-            using (var dump = ImRaii.Child("##nodedump", new Vector2(0, 160), true, ImGuiWindowFlags.HorizontalScrollbar))
-            {
-                if (dump) ImGui.TextUnformatted(nodeDump);
-            }
-            ImGui.Separator();
-        }
 
         var report = writer.LastReport;
         if (report == null)
@@ -188,25 +170,6 @@ internal sealed class DebugWindow : Window
         ImGui.TextUnformatted(report.Complete ? "Last Native Write:" : "Last Native Write (waiting for the next frame):");
         using var child = ImRaii.Child("##report", new Vector2(0, 0), false, ImGuiWindowFlags.HorizontalScrollbar);
         if (child) ImGui.TextUnformatted(report.ToString());
-    }
-
-    /// <summary>Ticket 14's first step: the ChatLog addon's node tree, one line per node, to the log, the clipboard and the tab.</summary>
-    private void DumpInputNodes()
-    {
-        IReadOnlyList<string> lines;
-        try
-        {
-            lines = ChatBoxNodeDump.Dump(gui);
-        }
-        catch (Exception ex)
-        {
-            lines = ["Dump failed: " + ChatBoxAccess.Describe(ex)];
-            log.Warning(ex, "Node dump: failed");
-        }
-        // Every text node's string, the current chat draft included: Debug only (ticket 18).
-        foreach (var line in lines) log.Debug("Node dump: {Line}", line);
-        nodeDump = string.Join('\n', lines);
-        ImGui.SetClipboardText(nodeDump);
     }
 
     /// <summary>Draws the two derived cursor positions over the game so they can be compared with the real caret.</summary>
