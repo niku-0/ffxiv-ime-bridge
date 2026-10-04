@@ -18,6 +18,11 @@
     <None Include="Assets/*.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- The plugin icon; Dalamud shows a dev plugin's from images/ next to the DLL, an installed one's from IconUrl. -->
+  <ItemGroup>
+    <None Include="images/icon.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="../FfxivImeBridge.Fcitx/FfxivImeBridge.Fcitx.csproj" />
   </ItemGroup>
