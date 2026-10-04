@@ -51,6 +51,8 @@ public sealed class KeyboardGateTests
 
     private GateVerdict Verdict(KeyMessage message, bool chatBoxFocused = true) => gate.Decide(message, chatBoxFocused).Verdict;
 
+    private GateRule Rule(KeyMessage message, bool chatBoxFocused = true) => gate.Decide(message, chatBoxFocused).Rule;
+
     [Fact]
     public void A_printing_key_is_asked_at_its_char_and_swallowed_whole_when_fcitx5_takes_it()
     {
@@ -230,13 +232,15 @@ public sealed class KeyboardGateTests
         var gateAlone = new KeyboardGate(keyState, () => false);
         keyState.Modifiers = new Modifiers { Alt = true };
 
-        Assert.Equal(GateVerdict.Toggle, gateAlone.Decide(SysDown(VkOem5, ScSection), chatBoxFocused: true).Verdict);
+        var alone = gateAlone.Decide(SysDown(VkOem5, ScSection), chatBoxFocused: true);
+        Assert.Equal((GateVerdict.Swallow, GateRule.Toggle), (alone.Verdict, alone.Rule));
         Assert.Equal(GateVerdict.Swallow, gateAlone.Decide(SysChar('§', ScSection), chatBoxFocused: true).Verdict);
         Assert.Equal(GateVerdict.Swallow, gateAlone.Decide(SysUp(VkOem5, ScSection), chatBoxFocused: true).Verdict);
 
         Activate();
         Fcitx.Handled = false;
-        Assert.Equal(GateVerdict.Toggle, Verdict(SysDown(VkOem5, ScSection)));
+        var acting = gate.Decide(SysDown(VkOem5, ScSection), chatBoxFocused: true);
+        Assert.Equal((GateVerdict.Swallow, GateRule.Toggle), (acting.Verdict, acting.Rule));
         Assert.Equal(GateVerdict.Swallow, Verdict(SysChar('§', ScSection)));
         // Alt may be released first, in which case the key up is a plain WM_KEYUP.
         keyState.Modifiers = default;
@@ -247,10 +251,23 @@ public sealed class KeyboardGateTests
     [Fact]
     public void Holding_the_toggle_key_does_not_report_toggle_again()
     {
+        // GateRule.Toggle is what KeyboardCapture flips Forwarding on: once per hold.
         keyState.Modifiers = new Modifiers { Alt = true };
 
-        Assert.Equal(GateVerdict.Toggle, Verdict(SysDown(VkOem5, ScSection)));
-        Assert.Equal(GateVerdict.Swallow, Verdict(SysDown(VkOem5, ScSection, repeat: true)));
+        Assert.Equal(GateRule.Toggle, Rule(SysDown(VkOem5, ScSection)));
+        var held = new[]
+        {
+            SysChar('§', ScSection),
+            SysDown(VkOem5, ScSection, repeat: true),
+            SysChar('§', ScSection),
+            SysUp(VkOem5, ScSection),
+        };
+        foreach (var message in held)
+        {
+            var decision = gate.Decide(message, chatBoxFocused: true);
+            Assert.Equal(GateVerdict.Swallow, decision.Verdict);
+            Assert.NotEqual(GateRule.Toggle, decision.Rule);
+        }
     }
 
     [Fact]
@@ -258,7 +275,7 @@ public sealed class KeyboardGateTests
     {
         keyState.Modifiers = new Modifiers { Alt = true };
 
-        Assert.Equal(GateVerdict.Toggle, Verdict(SysDown(0xC0 /* VK_OEM_3, US ` */, ScSection)));
+        Assert.Equal(GateRule.Toggle, Rule(SysDown(0xC0 /* VK_OEM_3, US ` */, ScSection)));
     }
 
     [Fact]
@@ -280,7 +297,7 @@ public sealed class KeyboardGateTests
         gate.ToggleKey = new ToggleKey(ChordModifiers.Ctrl, ScJ);
 
         keyState.Modifiers = new Modifiers { Ctrl = true };
-        Assert.Equal(GateVerdict.Toggle, Verdict(Down(VkJ, ScJ)));
+        Assert.Equal(GateRule.Toggle, Rule(Down(VkJ, ScJ)));
         Assert.Equal(GateVerdict.Swallow, Verdict(Char(0x0A /* ^J */, ScJ)));
         Assert.Equal(GateVerdict.Swallow, Verdict(Up(VkJ, ScJ)));
 
@@ -319,7 +336,6 @@ public sealed class KeyboardGateTests
         keyState.Modifiers = new Modifiers { Ctrl = true, Alt = true };
 
         var decision = gate.Decide(SysDown(VkOem5, ScSection), chatBoxFocused: true);
-        Assert.NotEqual(GateVerdict.Toggle, decision.Verdict);
         Assert.NotEqual(GateRule.Toggle, decision.Rule);
     }
 
@@ -352,7 +368,7 @@ public sealed class KeyboardGateTests
         gate.ToggleKey = captured!.Value;
         Assert.Equal(GateVerdict.Pass, Verdict(SysDown(VkNumpad7, ScNumpad7)));
         Verdict(SysUp(VkNumpad7, ScNumpad7));
-        Assert.Equal(GateVerdict.Toggle, Verdict(new KeyMessage(WindowMessage.SysKeyDown, VkHome, LParam(ScNumpad7, extended: true, alt: true))));
+        Assert.Equal(GateRule.Toggle, Rule(new KeyMessage(WindowMessage.SysKeyDown, VkHome, LParam(ScNumpad7, extended: true, alt: true))));
         Assert.Equal("Alt+sc 0xE047", captured.Value.Describe(_ => null));
     }
 
@@ -798,6 +814,6 @@ public sealed class KeyboardGateTests
         Assert.Equal(GateVerdict.Pass, Verdict(Down(VkK, ScK)));
         Assert.Equal(GateVerdict.Pass, Verdict(Char('k', ScK)));
         keyState.Modifiers = new Modifiers { Alt = true };
-        Assert.Equal(GateVerdict.Toggle, Verdict(SysDown(VkOem5, ScSection)));
+        Assert.Equal(GateRule.Toggle, Rule(SysDown(VkOem5, ScSection)));
     }
 }

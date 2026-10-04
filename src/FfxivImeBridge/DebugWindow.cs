@@ -135,10 +135,10 @@ internal sealed class DebugWindow : Window
         if (!child) return;
         foreach (var entry in hook.Trace)
         {
-            ImGui.PushStyleColor(ImGuiCol.Text, entry.Decision.Verdict switch
+            ImGui.PushStyleColor(ImGuiCol.Text, entry.Decision switch
             {
-                GateVerdict.Pass => Skipped,
-                GateVerdict.Toggle => Passed,
+                { Rule: GateRule.Toggle } => Passed,
+                { Verdict: GateVerdict.Pass } => Skipped,
                 _ => Swallowed,
             });
             ImGui.TextUnformatted(entry.ToString());

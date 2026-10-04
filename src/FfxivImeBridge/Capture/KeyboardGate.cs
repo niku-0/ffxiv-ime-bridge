@@ -10,8 +10,6 @@ internal enum GateVerdict
     Pass,
     /// <summary>Drop the message before the game sees it.</summary>
     Swallow,
-    /// <summary>The toggle chord: swallowed, and the owner should flip Forwarding.</summary>
-    Toggle,
 }
 
 /// <summary>Which rule produced a verdict; what the trace shows next to it.</summary>
@@ -21,7 +19,7 @@ internal enum GateRule
     NotKeyboard,
     /// <summary>The gate is not acting (Forwarding off, Degraded, the Chat Box not focused — for the mouse, no Composition shown): passed untouched, and not traced (ticket 18). A char or release that follows such a press is Inactive too.</summary>
     Inactive,
-    /// <summary>The toggle chord, swallowed whole.</summary>
+    /// <summary>The toggle chord's press, swallowed whole: the owner flips Forwarding. Its repeats, chars and release are <see cref="FollowsPress"/>.</summary>
     Toggle,
     /// <summary>A modifier key: sent, never asked, always passed.</summary>
     Modifier,
@@ -35,7 +33,7 @@ internal enum GateRule
     Skipped,
     /// <summary>Slash Bypass: passed without asking.</summary>
     Bypass,
-    /// <summary>A char or release: goes where its press went.</summary>
+    /// <summary>A char or release — or a held toggle chord's repeat: goes where its press went.</summary>
     FollowsPress,
     /// <summary>A dead key's char: swallowed silently; the composed character follows.</summary>
     DeadChar,
@@ -78,11 +76,12 @@ internal readonly record struct GateDecision(GateVerdict Verdict, GateRule Rule,
 /// <item>the game sees a whole keystroke or none of it: a press's chars and its
 /// release go where the press finally went (for a printing key, where its
 /// <c>WM_CHAR</c> went — the keydown is swallowed provisionally until then);</item>
-/// <item>every auto-repeat is a fresh press, decided afresh;</item>
+/// <item>every auto-repeat is a fresh press, decided afresh — save the
+/// Toggle Key's, which follow its press;</item>
 /// <item>the <see cref="ToggleKey"/> (by default Alt + the key left of 1,
-/// matched by scancode: § on a Nordic layout, ` on US) is reported as
-/// <see cref="GateVerdict.Toggle"/> and swallowed whole before anything is
-/// asked; the owner flips Forwarding;</item>
+/// matched by scancode: § on a Nordic layout, ` on US) is swallowed whole
+/// before anything is asked, and its press — once per hold — is reported as
+/// <see cref="GateRule.Toggle"/>; the owner flips Forwarding;</item>
 /// <item>while a capture is on (<see cref="BeginCapture"/>), the next
 /// non-modifier keydown is the new chord — or Escape, which cancels — and is
 /// swallowed whole, wherever focus is.</item>
@@ -168,9 +167,9 @@ internal sealed class KeyboardGate
         if (chatBoxFocused && ToggleKey.Matches(modifiers.For(message), message.Set1ScanCode))
         {
             // Held, the chord is one toggle, not a flicker; the repeats, chars and release are still eaten.
-            var verdict = held.Toggled && message.IsRepeat ? GateVerdict.Swallow : GateVerdict.Toggle;
+            var rule = held.Toggled && message.IsRepeat ? GateRule.FollowsPress : GateRule.Toggle;
             presses[vk] = new Press(GateVerdict.Swallow, Toggled: true);
-            return new GateDecision(verdict, GateRule.Toggle, keyClass);
+            return new GateDecision(GateVerdict.Swallow, rule, keyClass);
         }
 
         if (!chatBoxFocused || Acting is not { } session)
