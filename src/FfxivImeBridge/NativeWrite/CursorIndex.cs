@@ -7,6 +7,14 @@ namespace FfxivImeBridge.NativeWrite;
 /// </summary>
 internal static class CursorIndex
 {
+    /// <summary>
+    /// The Cursor as the game counts it: the input module's while the Chat Box
+    /// is its target (it is focused), else the component's own field. Both are
+    /// live and agree when targeted (ticket 04).
+    /// </summary>
+    public static int Live(bool isModuleTarget, int moduleCursor, int componentCursor) =>
+        isModuleTarget ? moduleCursor : componentCursor;
+
     /// <summary>The byte offset the game's index denotes, or null if it does not point into the text.</summary>
     public static int? ToByteOffset(ReadOnlySpan<byte> text, int index)
     {

@@ -14,6 +14,13 @@ internal sealed record ModuleStrings(string Before, string Selected, string Afte
     public override string ToString() => $"module strings: before=\"{Before}\" sel=\"{Selected}\" after=\"{After}\" input=\"{Input}\" evaluated=\"{Evaluated}\"";
 }
 
+/// <summary>What a Native Write reads before it plans: the Chat Box's text, the Cursor and the limits.</summary>
+internal sealed record ChatBoxText(byte[] RawText, int CursorIndex, ChatBoxLimits Limits)
+{
+    /// <summary>The Cursor as a byte offset into <see cref="RawText"/>, or null if the index does not point into it.</summary>
+    public int? CursorByteOffset => NativeWrite.CursorIndex.ToByteOffset(RawText, CursorIndex);
+}
+
 /// <summary>
 /// Everything the Chat Box's text input says about itself at one instant, both
 /// the component's own fields and the input module's editing state, so the
@@ -52,23 +59,11 @@ internal sealed record ChatBoxState(
     public string RawString => Encoding.UTF8.GetString(RawText);
     public int RawCodePoints => NativeWrite.CursorIndex.CountCodePoints(RawText);
 
-    /// <summary>
-    /// The limits the splice checks: a non-zero handler value wins over the ULD
-    /// data, and <c>GetInputMaxLength()</c> stands in for the character limit when
-    /// both read 0, so that the check can fire before <c>SetText</c> gets to
-    /// truncate. In-game the Chat Box reads MaxByte=500 everywhere and MaxChar=0
-    /// (ticket 04): its limit is 500 bytes.
-    /// </summary>
-    public ChatBoxLimits Limits => new(
-        HandlerMaxChar is > 0 and var chars ? chars : MaxChar > 0 ? (int)MaxChar : (int)InputMaxLength,
-        HandlerMaxByte is > 0 and var bytes ? bytes : (int)MaxByte);
+    /// <summary>The limits the splice checks: see <see cref="ChatBoxLimits.Of"/>.</summary>
+    public ChatBoxLimits Limits => ChatBoxLimits.Of(HandlerMaxChar, HandlerMaxByte, MaxChar, MaxByte, InputMaxLength);
 
-    /// <summary>
-    /// The Cursor as the game counts it, in code points: the input module's
-    /// while the Chat Box is its target (it is focused), else the component's
-    /// own field. Both are live and agree when targeted (ticket 04).
-    /// </summary>
-    public int CursorIndex => IsModuleTarget ? ModuleCursor : ComponentCursor;
+    /// <summary>The Cursor in code points: see <see cref="NativeWrite.CursorIndex.Live"/>.</summary>
+    public int CursorIndex => NativeWrite.CursorIndex.Live(IsModuleTarget, ModuleCursor, ComponentCursor);
 
     /// <summary>The Cursor as a byte offset into <see cref="RawText"/>, or null if the index does not point into it.</summary>
     public int? CursorByteOffset => NativeWrite.CursorIndex.ToByteOffset(RawText, CursorIndex);

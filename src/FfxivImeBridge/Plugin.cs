@@ -60,7 +60,7 @@ public sealed class Plugin : IDalamudPlugin
 
         config = ConfigStore.Load(pluginInterface, log);
         probe = new ProbeRunner(log, chat);
-        writer = new NativeWriter(gui, framework, log, chat);
+        writer = new NativeWriter(gui, log, chat);
         bridge = new Bridge(framework, gui, log, chat, toast, probe, writer, config);
         overlayFont = new OverlayFont(pluginInterface.UiBuilder, config, log);
         indicator = new Indicator(bridge, gui, config, overlayFont, textures, Path.Combine(pluginInterface.AssemblyLocation.DirectoryName!, "Assets"));

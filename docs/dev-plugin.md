@@ -371,21 +371,22 @@ until you press Enter yourself.
   module's text-before/after-selection byte lengths, every limit the game
   states, the text node and cursor node screen boxes, the measured cursor
   x and the input's style (font size, the game's IME and candidate colours,
-  which ink the Preedit gets) — and the last Native Write's report (before / right after the write /
-  two frames later, with whether the text and cursor held). **Copy readout**
+  which ink the Preedit gets) — and the last Native Write's report: its
+  outcome, where the text went and the splice plan. **Copy readout**
   puts both on the clipboard as text, **Copy report** the report alone.
   **Show cursor markers** draws a red line at the input's cursor node and a
   blue one at text node + measured width so both can be compared with the
   real caret.
 - Every write also goes to `dalamud.log` as `Native Write: …`: at
-  Information the outcome, where it went, the byte and code-point counts
-  before and after, the cursor indices and whether the text held at the next
-  frame — and at Debug the whole report, which is the only place the
-  committed text and the Chat Box contents appear (ticket 18: `dalamud.log`
-  is a file users upload to support channels). A refused Overflow and a
-  failed write are one Warning with the reason and the counts, and the text
-  itself at Debug. The tab's report and **Copy report** keep the full text:
-  that is the user asking for it.
+  Information the outcome, where it went and the committed text's byte and
+  code-point counts — and at Debug the whole report, which is the only place
+  the committed text appears (ticket 18: `dalamud.log` is a file users
+  upload to support channels). Nothing reads the box back after a write: a
+  game patch that breaks the write shows in the Chat Box itself, as missing
+  text or a misplaced cursor. A refused Overflow and a failed write are one
+  Warning with the reason and the counts, and the text itself at Debug. The
+  tab's report and **Copy report** keep the full text: that is the user
+  asking for it.
 
 ## Font and the Indicator's place (M2.4)
 

@@ -3,7 +3,19 @@ using System.Text;
 namespace FfxivImeBridge.NativeWrite;
 
 /// <summary>The game's length limits for a text input, as its ULD data states them. 0 = no limit on that axis.</summary>
-internal readonly record struct ChatBoxLimits(int MaxChars, int MaxBytes);
+internal readonly record struct ChatBoxLimits(int MaxChars, int MaxBytes)
+{
+    /// <summary>
+    /// The limits the splice checks: a non-zero handler value wins over the ULD
+    /// data, and <c>GetInputMaxLength()</c> stands in for the character limit when
+    /// both read 0, so that the check can fire before <c>SetText</c> gets to
+    /// truncate. In-game the Chat Box reads MaxByte=500 everywhere and MaxChar=0
+    /// (ticket 04): its limit is 500 bytes.
+    /// </summary>
+    public static ChatBoxLimits Of(int? handlerMaxChar, int? handlerMaxByte, uint maxChar, uint maxByte, uint inputMaxLength) => new(
+        handlerMaxChar is > 0 and var chars ? chars : maxChar > 0 ? (int)maxChar : (int)inputMaxLength,
+        handlerMaxByte is > 0 and var bytes ? bytes : (int)maxByte);
+}
 
 /// <summary>
 /// The outcome of planning a Native Write: either the Chat Box's new text and

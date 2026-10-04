@@ -104,7 +104,7 @@ internal static unsafe class ChatBoxAccess
     private static int CursorIndexOf(AtkComponentTextInput* input)
     {
         var module = Module();
-        return IsModuleTarget(module, input) ? module->CursorPos : input->CursorPos;
+        return CursorIndex.Live(IsModuleTarget(module, input), module->CursorPos, input->CursorPos);
     }
 
     /// <summary>The node's own scale times every ancestor's: what its drawn height is in screen pixels per unit of <c>Height</c>.</summary>
@@ -115,13 +115,24 @@ internal static unsafe class ChatBoxAccess
         return scale;
     }
 
+    /// <summary>What a Native Write needs and nothing more: the raw text, the Cursor and the limits.</summary>
+    public static ChatBoxText ReadText(AtkComponentTextInput* input)
+    {
+        var data = input->ComponentTextData;
+        return new ChatBoxText(
+            input->RawString.AsSpan().ToArray(),
+            CursorIndexOf(input),
+            ChatBoxLimits.Of(IntValue(input->HandlerValues.MaxChar), IntValue(input->HandlerValues.MaxByte), data.MaxChar, data.MaxByte, input->GetInputMaxLength()));
+    }
+
+    /// <summary>Everything the debug readout shows, or null while the addon is not loaded.</summary>
     public static ChatBoxState? Read(IGameGui gui)
     {
         var input = Find(gui);
         return input == null ? null : Read(input);
     }
 
-    public static ChatBoxState Read(AtkComponentTextInput* input)
+    private static ChatBoxState Read(AtkComponentTextInput* input)
     {
         var raw = input->RawString.AsSpan().ToArray();
         var module = Module();
@@ -163,8 +174,8 @@ internal static unsafe class ChatBoxAccess
                 module->RawTextBeforeSelection.ToString(), module->RawSelectedText.ToString(), module->RawTextAfterSelection.ToString(),
                 module->RawInputString.ToString(), module->EvaluatedInputString.ToString()));
 
-        // Cursor x = text node's left edge + the drawn width of the text before the cursor:
-        // the Preedit's fallback anchor when the cursor node is missing.
+        // Cursor x = text node's left edge + the drawn width of the text before the cursor,
+        // for the debug tab's blue marker: how CursorAnchor places the Preedit without a cursor node.
         if (textNode is { } box && state.CursorByteOffset is { } offset)
         {
             try

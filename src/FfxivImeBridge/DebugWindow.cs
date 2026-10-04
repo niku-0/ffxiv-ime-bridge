@@ -167,7 +167,7 @@ internal sealed class DebugWindow : Window
         }
         if (ImGui.Button("Copy report")) ImGui.SetClipboardText(report.ToString());
         ImGui.SameLine();
-        ImGui.TextUnformatted(report.Complete ? "Last Native Write:" : "Last Native Write (waiting for the next frame):");
+        ImGui.TextUnformatted("Last Native Write:");
         using var child = ImRaii.Child("##report", new Vector2(0, 0), false, ImGuiWindowFlags.HorizontalScrollbar);
         if (child) ImGui.TextUnformatted(report.ToString());
     }
@@ -199,7 +199,7 @@ internal sealed class DebugWindow : Window
         sb.AppendLine(PreeditPlacementText());
         if (writer.LastReport is { } report)
         {
-            sb.AppendLine(report.Complete ? "last native write:" : "last native write (waiting for the next frame):");
+            sb.AppendLine("last native write:");
             sb.Append(report);
         }
         return sb.ToString();
