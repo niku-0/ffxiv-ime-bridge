@@ -34,9 +34,11 @@ public sealed class KeyboardGateTests
 
     public KeyboardGateTests()
     {
-        session = ForwardingSession.OpenAsync(fcitx, chat.Add, _ => { }).GetAwaiter().GetResult();
-        gate = new KeyboardGate(keyState, () => chatBoxEmpty) { Session = session, Timeout = ShortTimeout };
+        session = Open();
+        gate = new KeyboardGate(keyState, () => chatBoxEmpty) { Session = session };
     }
+
+    private ForwardingSession Open() => ForwardingSession.OpenAsync(fcitx, chat.Add, _ => { }, askTimeout: ShortTimeout).GetAwaiter().GetResult();
 
     private FakeInputContext Fcitx => fcitx.Created[^1];
 
@@ -174,7 +176,7 @@ public sealed class KeyboardGateTests
     }
 
     [Fact]
-    public void Three_consecutive_timeouts_degrade_forwarding_and_the_next_key_passes_untouched()
+    public void After_a_degrading_timeout_the_next_key_passes_untouched()
     {
         Activate();
         for (var i = 0; i < 3; i++) Fcitx.Replies.Enqueue(Silence());
@@ -186,45 +188,10 @@ public sealed class KeyboardGateTests
             Verdict(Up(VkK, ScK));
         }
         Assert.True(session.Degraded);
-        Assert.Equal(["IME Bridge: forwarding on", "IME Bridge: fcitx5 is not answering, forwarding degraded"], chat);
 
         Assert.Equal(GateVerdict.Pass, Verdict(Down(VkK, ScK)));
         Assert.Equal(GateVerdict.Pass, Verdict(Char('k', ScK)));
         Assert.Equal(3, Fcitx.Asked.Count);
-    }
-
-    [Fact]
-    public void A_reply_resets_the_timeout_count()
-    {
-        Activate();
-        Fcitx.Replies.Enqueue(Silence());
-        Fcitx.Replies.Enqueue(Silence());
-        Fcitx.Replies.Enqueue(Task.FromResult(true)); // not a timer: a slow CI runner once let a 1 ms delay outlast the 20 ms timeout
-        Fcitx.Replies.Enqueue(Silence());
-        Fcitx.Replies.Enqueue(Silence());
-
-        for (var i = 0; i < 5; i++)
-        {
-            Verdict(Down(VkK, ScK));
-            Verdict(Char('k', ScK));
-            Verdict(Up(VkK, ScK));
-        }
-        Assert.False(session.Degraded);
-    }
-
-    [Fact]
-    public void A_faulted_call_counts_as_no_answer()
-    {
-        Activate();
-        for (var i = 0; i < 3; i++) Fcitx.Replies.Enqueue(Task.FromException<bool>(new IOException("connection closed")));
-
-        for (var i = 0; i < 3; i++)
-        {
-            Verdict(Down(VkK, ScK));
-            Assert.Equal(GateVerdict.Swallow, Verdict(Char('k', ScK)));
-            Verdict(Up(VkK, ScK));
-        }
-        Assert.True(session.Degraded);
     }
 
     [Fact]
@@ -801,6 +768,26 @@ public sealed class KeyboardGateTests
         var captured = gate.Decide(Down(VkK, ScK), chatBoxFocused: false); // "Press a key" catches it wherever focus is
         Assert.Equal(GateRule.Captured, captured.Rule);
         Assert.True(captured.Acted);
+    }
+
+    [Fact]
+    public void A_key_held_across_a_session_swap_tells_its_release_to_the_old_session_only()
+    {
+        // A Reconnect replaces the session while K is down; fcitx5 behind the new one never heard of the press.
+        Activate();
+        Fcitx.Handled = true;
+        var old = Fcitx;
+        Verdict(Down(VkK, ScK));
+        Verdict(Char('k', ScK));
+
+        var next = Open();
+        next.Forwarding = true;
+        next.ObserveFocus(chatBoxFocused: true);
+        gate.Session = next;
+        Assert.Equal(GateVerdict.Swallow, Verdict(Up(VkK, ScK)));
+
+        Assert.Equal([(uint)'k'], old.Sent.Where(k => k.IsRelease).Select(k => k.KeySym));
+        Assert.Empty(Fcitx.Sent);
     }
 
     [Fact]

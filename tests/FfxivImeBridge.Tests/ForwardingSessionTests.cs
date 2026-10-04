@@ -1,4 +1,5 @@
 using FfxivImeBridge.Capture;
+using FfxivImeBridge.Fcitx;
 using FfxivImeBridge.Session;
 using Xunit;
 
@@ -11,6 +12,9 @@ namespace FfxivImeBridge.Tests;
 /// </summary>
 public sealed class ForwardingSessionTests
 {
+    private static readonly TimeSpan ShortTimeout = TimeSpan.FromMilliseconds(20);
+    private static readonly KeyEvent K = KeyEvent.Char('k');
+
     private readonly FakeFcitx fcitx = new();
     private readonly List<string> chat = new();
     private readonly ForwardingSession session;
@@ -18,7 +22,145 @@ public sealed class ForwardingSessionTests
 
     public ForwardingSessionTests()
     {
-        session = ForwardingSession.OpenAsync(fcitx, chat.Add, _ => { }).GetAwaiter().GetResult();
+        session = Open();
+    }
+
+    private ForwardingSession Open() => ForwardingSession.OpenAsync(fcitx, chat.Add, _ => { }, askTimeout: ShortTimeout).GetAwaiter().GetResult();
+
+    private static Task<bool> Silence() => new TaskCompletionSource<bool>().Task;
+
+    /// <summary>Asks <paramref name="count"/> keys that fcitx5 never answers.</summary>
+    private void AskUnanswered(int count, ForwardingSession? on = null)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            Context.Replies.Enqueue(Silence());
+            Assert.Equal(KeyOutcome.TimedOut, (on ?? session).Ask(K).Outcome);
+        }
+    }
+
+    // --- The waited call (ADR-0002) ---
+
+    [Fact]
+    public void Three_consecutive_unanswered_asks_degrade_forwarding()
+    {
+        session.Forwarding = true;
+        session.ObserveFocus(chatBoxFocused: true);
+
+        AskUnanswered(2);
+        Assert.False(session.Degraded);
+        AskUnanswered(1);
+        Assert.True(session.Degraded);
+        Assert.False(session.GateActive);
+        Assert.Equal(["IME Bridge: forwarding on", "IME Bridge: fcitx5 is not answering, forwarding degraded"], chat);
+    }
+
+    [Fact]
+    public void An_answer_resets_the_timeout_count()
+    {
+        AskUnanswered(2);
+        Context.Replies.Enqueue(Task.FromResult(true)); // not a timer: a slow CI runner once let a 1 ms delay outlast the 20 ms timeout
+        Assert.Equal(KeyOutcome.Consumed, session.Ask(K).Outcome);
+        AskUnanswered(2);
+        Assert.False(session.Degraded);
+    }
+
+    [Fact]
+    public void A_faulted_call_counts_as_no_answer()
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            Context.Replies.Enqueue(Task.FromException<bool>(new IOException("connection closed")));
+            Assert.Equal(KeyOutcome.TimedOut, session.Ask(K).Outcome);
+        }
+        Assert.True(session.Degraded);
+    }
+
+    [Fact]
+    public void An_answer_says_whether_fcitx5_took_the_key_and_how_long_it_took()
+    {
+        Context.Replies.Enqueue(Task.FromResult(true));
+        Context.Replies.Enqueue(Task.FromResult(false));
+
+        var consumed = session.Ask(K);
+        Assert.Equal(KeyOutcome.Consumed, consumed.Outcome);
+        Assert.NotNull(consumed.WaitMs);
+        Assert.Equal(KeyOutcome.Declined, session.Ask(K).Outcome);
+        Assert.Equal(2, Context.Asked.Count);
+    }
+
+    /// <summary>fcitx5 left the bus, or the connection died: nothing on the other end to talk to (ticket 18).</summary>
+    public static TheoryData<bool> FcitxGone => new() { false, true };
+
+    private void LoseFcitx(bool connectionDies)
+    {
+        if (connectionDies) fcitx.Die("socket closed");
+        else fcitx.Leave();
+        session.Tick();
+        Assert.True(session.Degraded);
+    }
+
+    [Theory]
+    [MemberData(nameof(FcitxGone))]
+    public void With_nothing_to_talk_to_ask_makes_no_call_and_declines_without_a_wait(bool connectionDies)
+    {
+        session.Forwarding = true;
+        session.ObserveFocus(chatBoxFocused: true);
+        LoseFcitx(connectionDies);
+
+        for (var i = 0; i < 3; i++) Assert.Equal(new KeyAnswer(KeyOutcome.Declined, null), session.Ask(K));
+        Assert.Empty(Context.Asked);
+    }
+
+    [Theory]
+    [MemberData(nameof(FcitxGone))]
+    public void With_nothing_to_talk_to_tell_select_and_paging_reach_no_context(bool connectionDies)
+    {
+        session.ObserveFocus(chatBoxFocused: true);
+        LoseFcitx(connectionDies);
+        Context.Calls.Clear();
+
+        session.Tell(K);
+        session.Tell(K.AsRelease());
+        session.SelectCandidate(1);
+        session.NextPage();
+        session.PreviousPage();
+        Assert.Empty(Context.Sent);
+        Assert.Empty(Context.Calls);
+    }
+
+    [Fact]
+    public void Tell_select_and_paging_reach_the_context_while_fcitx5_is_there()
+    {
+        session.Tell(K);
+        session.SelectCandidate(1);
+        session.NextPage();
+        session.PreviousPage();
+        Assert.Equal([K], Context.Sent);
+        Assert.Equal(["SelectCandidate 1", "NextPage", "PrevPage"], Context.Calls);
+    }
+
+    [Fact]
+    public void The_timeout_count_does_not_carry_from_one_session_to_the_next()
+    {
+        AskUnanswered(2);
+        var next = Open();
+        AskUnanswered(1, next);
+        Assert.False(next.Degraded);
+    }
+
+    [Fact]
+    public void The_timeout_count_restarts_after_degraded_by_timeouts_lifts()
+    {
+        session.ObserveFocus(chatBoxFocused: true);
+        AskUnanswered(3);
+        Assert.True(session.Degraded);
+        session.ObserveFocus(chatBoxFocused: false);
+        session.ObserveFocus(chatBoxFocused: true);
+        Assert.False(session.Degraded);
+
+        AskUnanswered(1);
+        Assert.False(session.Degraded);
     }
 
     [Fact]
@@ -261,7 +403,7 @@ public sealed class ForwardingSessionTests
     {
         session.Forwarding = true;
         session.ObserveFocus(chatBoxFocused: true);
-        session.MarkDegraded(DegradedCause.Timeouts);
+        AskUnanswered(3);
         Assert.True(session.Degraded);
         Assert.False(session.GateActive);
         Assert.Equal(["IME Bridge: forwarding on", "IME Bridge: fcitx5 is not answering, forwarding degraded"], chat);
@@ -277,7 +419,7 @@ public sealed class ForwardingSessionTests
     public void Bus_loss_on_top_of_timeouts_still_needs_the_context_recreated()
     {
         session.ObserveFocus(chatBoxFocused: true);
-        session.MarkDegraded(DegradedCause.Timeouts);
+        AskUnanswered(3);
         fcitx.Leave();
         session.Tick();
         Assert.Single(chat); // still one entry into Degraded

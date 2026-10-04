@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using FfxivImeBridge.Fcitx;
 
 namespace FfxivImeBridge.Session;
@@ -14,6 +15,20 @@ internal enum DegradedCause
     ConnectionLost,
 }
 
+/// <summary>What became of a key fcitx5 was asked about.</summary>
+internal enum KeyOutcome
+{
+    /// <summary>fcitx5 took the key.</summary>
+    Consumed,
+    /// <summary>fcitx5 let the key go, or there was nothing to ask.</summary>
+    Declined,
+    /// <summary>No answer within the ask timeout, or the call faulted (ADR-0002).</summary>
+    TimedOut,
+}
+
+/// <summary>The answer to <see cref="ForwardingSession.Ask"/>. <see cref="WaitMs"/> is set iff fcitx5 was actually asked.</summary>
+internal readonly record struct KeyAnswer(KeyOutcome Outcome, double? WaitMs);
+
 /// <summary>
 /// The plugin's one Input Context, tied to the Chat Box's focus, and the
 /// Forwarding/Degraded state around it. Main thread only, except the library
@@ -23,12 +38,19 @@ internal enum DegradedCause
 /// </summary>
 internal sealed class ForwardingSession : IAsyncDisposable
 {
+    /// <summary>ADR-0002: measured ~10 ms from inside Wine; a key past this is swallowed.</summary>
+    public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMilliseconds(50);
+
+    /// <summary>This many timeouts in a row, with no answer between, mean fcitx5 is not answering: Forwarding goes Degraded.</summary>
+    public const int TimeoutsBeforeDegraded = 3;
+
     private readonly IInputContextFactory factory;
     private readonly Action<string> chatLine;
     private readonly Action<string> log;
     private readonly MainThreadQueue queue = new();
     private readonly ConcurrentQueue<string> commits = new();
     private readonly CancellationTokenSource disposal = new();
+    private readonly TimeSpan askTimeout;
     private IInputContextClient? context;
     private Action<InputMethodInfo>? onInputMethodChanged;
     private Action<string>? onCommitted;
@@ -37,12 +59,14 @@ internal sealed class ForwardingSession : IAsyncDisposable
     private bool fcitxOnBus = true;
     private bool forwarding;
     private bool chatBoxFocused;
+    private int consecutiveTimeouts;
 
-    private ForwardingSession(IInputContextFactory factory, IInputContextClient context, Action<string> chatLine, Action<string> log)
+    private ForwardingSession(IInputContextFactory factory, IInputContextClient context, Action<string> chatLine, Action<string> log, TimeSpan askTimeout)
     {
         this.factory = factory;
         this.chatLine = chatLine;
         this.log = log;
+        this.askTimeout = askTimeout;
         factory.AvailabilityChanged += available => queue.Post(() => OnAvailabilityChanged(available));
         factory.ConnectionLost += reason => queue.Post(() => OnConnectionLost(reason));
         Attach(context);
@@ -51,10 +75,11 @@ internal sealed class ForwardingSession : IAsyncDisposable
     /// <summary>Creates the first Input Context and the session around it.</summary>
     /// <param name="chatLine">Prints a local chat line (never a sent message).</param>
     /// <param name="forwarding">What Forwarding starts as (the config's startup behaviour); not a flip, so no chat line.</param>
-    public static async Task<ForwardingSession> OpenAsync(IInputContextFactory factory, Action<string> chatLine, Action<string> log, bool forwarding = false, CancellationToken cancellationToken = default)
+    /// <param name="askTimeout">How long <see cref="Ask"/> waits; null is <see cref="DefaultTimeout"/>.</param>
+    public static async Task<ForwardingSession> OpenAsync(IInputContextFactory factory, Action<string> chatLine, Action<string> log, bool forwarding = false, CancellationToken cancellationToken = default, TimeSpan? askTimeout = null)
     {
         var context = await factory.CreateContextAsync(cancellationToken).ConfigureAwait(false);
-        return new ForwardingSession(factory, context, chatLine, log) { forwarding = forwarding };
+        return new ForwardingSession(factory, context, chatLine, log, askTimeout ?? DefaultTimeout) { forwarding = forwarding };
     }
 
     /// <summary>The user's choice: keys typed into the focused Chat Box go to fcitx5. Every flip prints a chat line.</summary>
@@ -83,18 +108,18 @@ internal sealed class ForwardingSession : IAsyncDisposable
     /// </summary>
     private bool NothingToTell => degraded is DegradedCause.BusLost or DegradedCause.ConnectionLost;
 
+    /// <summary>The context to talk to; null when there is <see cref="NothingToTell"/> or no context attached.</summary>
+    private IInputContextClient? ReachableContext => NothingToTell ? null : context;
+
     /// <summary>Forwarding with fcitx5 behind it.</summary>
     public bool GateActive => Forwarding && !Degraded;
 
     public InputMethodInfo? CurrentInputMethod { get; private set; }
 
-    /// <summary>The context the Gate asks; null only while a BusLost recreation has detached the old one.</summary>
-    public IInputContextClient? Context => context;
-
     /// <summary>
     /// The context's state as last taken on the game thread — after each waited
-    /// key reply and on each tick — for rendering (ticket 08). <see cref="Context"/>'s
-    /// own <c>State</c> is always the freshest; this one only moves on the game thread.
+    /// key reply and on each tick — for rendering (ticket 08). The context's own
+    /// <c>State</c> (<see cref="IsComposing"/>) is always the freshest; this one only moves on the game thread.
     /// </summary>
     public CompositionState Composition { get; private set; } = CompositionState.Idle;
 
@@ -125,11 +150,57 @@ internal sealed class ForwardingSession : IAsyncDisposable
     public bool TryTakeCommit(out string text) => commits.TryDequeue(out text!);
 
     /// <summary>
+    /// The waited call (ADR-0002). Game thread; blocks up to the ask timeout.
+    /// <see cref="TimeoutsBeforeDegraded"/> timeouts in a row enter
+    /// Degraded(Timeouts); an answer, or entering Degraded, starts the count again.
+    /// With nothing to talk to it answers <see cref="KeyOutcome.Declined"/>
+    /// unasked: no call, no wait, nothing counted.
+    /// </summary>
+    public KeyAnswer Ask(KeyEvent key)
+    {
+        if (ReachableContext is not { } reachable) return new KeyAnswer(KeyOutcome.Declined, null);
+        var call = reachable.ProcessKeyAsync(key);
+        var started = Stopwatch.GetTimestamp();
+        bool answered;
+        try
+        {
+            answered = call.Wait(askTimeout);
+        }
+        catch (AggregateException)
+        {
+            answered = false; // a fault is logged by the client; here it is silence
+        }
+        var waited = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+
+        if (!answered)
+        {
+            if (++consecutiveTimeouts >= TimeoutsBeforeDegraded)
+            {
+                consecutiveTimeouts = 0;
+                MarkDegraded(DegradedCause.Timeouts);
+            }
+            return new KeyAnswer(KeyOutcome.TimedOut, waited);
+        }
+        consecutiveTimeouts = 0;
+        return new KeyAnswer(call.Result ? KeyOutcome.Consumed : KeyOutcome.Declined, waited);
+    }
+
+    /// <summary>A key fcitx5 is told about but not asked about: modifier presses, and the release of every press it was told about.</summary>
+    public void Tell(KeyEvent key) => ReachableContext?.SendKey(key);
+
+    /// <summary>Mouse selection (ticket 16): the candidate at <paramref name="index"/> on the current page, as fcitx5's own panel would.</summary>
+    public void SelectCandidate(int index) => ReachableContext?.SelectCandidate(index);
+
+    public void NextPage() => ReachableContext?.NextPage();
+
+    public void PreviousPage() => ReachableContext?.PreviousPage();
+
+    /// <summary>
     /// Enter Degraded. One chat line per entry; a worse cause on top of a lesser
     /// one upgrades silently, because lifting it then needs more (a new context
     /// after a bus loss, a new session after the connection died).
     /// </summary>
-    public void MarkDegraded(DegradedCause cause)
+    private void MarkDegraded(DegradedCause cause)
     {
         if (degraded is { } current && current >= cause) return;
         var entering = degraded is null;

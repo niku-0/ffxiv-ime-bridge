@@ -31,10 +31,10 @@ internal interface IInputContextClient : IAsyncDisposable
     void Reset();
 
     /// <summary>
-    /// The one call the Gate waits on (ADR-0002): <see langword="true"/> when
+    /// The one call the session waits on (ADR-0002): <see langword="true"/> when
     /// fcitx5 consumed the key. The task must never need the game thread to
     /// complete; a fault (connection gone) is the implementation's to log, and
-    /// the Gate treats it as no reply.
+    /// the session treats it as no reply.
     /// </summary>
     Task<bool> ProcessKeyAsync(KeyEvent key);
 

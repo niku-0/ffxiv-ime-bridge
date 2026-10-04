@@ -94,17 +94,10 @@ internal sealed class KeyboardGate
     /// <summary>PC set-1 scancode of the key left of 1, whatever the layout prints on it.</summary>
     public const int DefaultToggleScanCode = 0x29;
 
-    /// <summary>ADR-0002: measured ~10 ms from inside Wine; a key past this is swallowed.</summary>
-    public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMilliseconds(50);
-
-    /// <summary>This many timeouts in a row, with no reply between, mean fcitx5 is not answering: Forwarding goes Degraded.</summary>
-    public const int TimeoutsBeforeDegraded = 3;
-
     private readonly IKeyStateReader keyState;
     private readonly Func<bool> chatBoxEmpty;
     private readonly Press[] presses = new Press[256];
     private int charsBelongTo = -1;
-    private int consecutiveTimeouts;
     private bool bypass;
     private Action<ToggleKey?>? capture;
 
@@ -116,10 +109,8 @@ internal sealed class KeyboardGate
         this.chatBoxEmpty = chatBoxEmpty;
     }
 
-    /// <summary>The session whose context is asked; null while there is none (the gate then only knows the toggle chord).</summary>
+    /// <summary>The session that is asked; null while there is none (the gate then only knows the toggle chord).</summary>
     public ForwardingSession? Session { get; set; }
-
-    public TimeSpan Timeout { get; init; } = DefaultTimeout;
 
     /// <summary>The chord that flips Forwarding, from the config; unbound matches nothing.</summary>
     public ToggleKey ToggleKey { get; set; } = ToggleKey.Default;
@@ -138,9 +129,8 @@ internal sealed class KeyboardGate
     /// <summary>Ends a capture without a key; the callback is not called.</summary>
     public void CancelCapture() => capture = null;
 
-    /// <summary>The session and its context while the gate acts at all (<c>Forwarding &amp;&amp; !Degraded</c>); null otherwise.</summary>
-    private (ForwardingSession Session, IInputContextClient Context)? Acting =>
-        Session is { GateActive: true, Context: { } context } session ? (session, context) : null;
+    /// <summary>The session while the gate acts at all (<c>Forwarding &amp;&amp; !Degraded</c>); null otherwise.</summary>
+    private ForwardingSession? Acting => Session is { GateActive: true } session ? session : null;
 
     public GateDecision Decide(KeyMessage message, bool chatBoxFocused)
     {
@@ -183,7 +173,7 @@ internal sealed class KeyboardGate
             return new GateDecision(verdict, GateRule.Toggle, keyClass);
         }
 
-        if (!chatBoxFocused || Acting is not var (session, context))
+        if (!chatBoxFocused || Acting is not { } session)
         {
             presses[vk] = new Press(GateVerdict.Pass, Untouched: true);
             return new GateDecision(GateVerdict.Pass, GateRule.Inactive, keyClass);
@@ -195,8 +185,8 @@ internal sealed class KeyboardGate
         {
             case KeyClass.Modifier:
                 var modifier = KeyTranslation.FromKey(message, modifiers);
-                context.SendKey(modifier);
-                presses[vk] = new Press(GateVerdict.Pass, Sent: modifier);
+                session.Tell(modifier);
+                presses[vk] = new Press(GateVerdict.Pass, Sent: new SentKey(session, modifier));
                 return new GateDecision(GateVerdict.Pass, GateRule.Modifier, keyClass);
 
             case KeyClass.Printing:
@@ -209,8 +199,8 @@ internal sealed class KeyboardGate
 
             case KeyClass.Fixed:
                 var key = KeyTranslation.FromKey(message, modifiers);
-                var (verdict, rule, wait) = Ask(session, context, key);
-                presses[vk] = new Press(verdict, Sent: key);
+                var (verdict, rule, wait) = Ask(session, key);
+                presses[vk] = new Press(verdict, Sent: new SentKey(session, key));
                 return new GateDecision(verdict, rule, keyClass, wait);
 
             default:
@@ -225,8 +215,8 @@ internal sealed class KeyboardGate
         var press = presses[vk];
         presses[vk] = default;
 
-        // Told only if its press was: fcitx5 never heard of a skipped or unforwarded keydown.
-        if (press.Sent is { } sent) Session?.Context?.SendKey(sent.AsRelease());
+        // Told only if its press was, and to the session that heard the press: fcitx5 never heard of a skipped or unforwarded keydown.
+        if (press.Sent is { } sent) sent.To.Tell(sent.Key.AsRelease());
         return new GateDecision(press.Verdict, Following(press), KeyTranslation.Classify(message, modifiers));
     }
 
@@ -246,7 +236,7 @@ internal sealed class KeyboardGate
         if (!press.Provisional) return new GateDecision(press.Verdict, Following(press));
 
         // The press is swallowed so far; this char decides it for good — and can only be asked while the gate still acts.
-        if (Acting is not var (session, context))
+        if (Acting is not { } session)
         {
             presses[vk] = new Press(GateVerdict.Swallow);
             return new GateDecision(GateVerdict.Swallow, GateRule.FollowsPress, KeyClass.Printing);
@@ -259,8 +249,8 @@ internal sealed class KeyboardGate
         }
 
         var key = KeyTranslation.FromChar(message, modifiers)!.Value;
-        var (verdict, rule, wait) = Ask(session, context, key);
-        presses[vk] = new Press(verdict, Sent: key);
+        var (verdict, rule, wait) = Ask(session, key);
+        presses[vk] = new Press(verdict, Sent: new SentKey(session, key));
         return new GateDecision(verdict, rule, KeyClass.Printing, wait);
     }
 
@@ -302,37 +292,23 @@ internal sealed class KeyboardGate
     }
 
     /// <summary>The waited call (ADR-0002): handled ⇒ swallow, declined ⇒ pass, no answer in time ⇒ swallow.</summary>
-    private (GateVerdict Verdict, GateRule Rule, double WaitMs) Ask(ForwardingSession session, IInputContextClient context, KeyEvent key)
+    private static (GateVerdict Verdict, GateRule Rule, double? WaitMs) Ask(ForwardingSession session, KeyEvent key)
     {
-        var call = context.ProcessKeyAsync(key);
-        var started = Stopwatch.GetTimestamp();
-        bool answered;
-        try
+        var answer = session.Ask(key);
+        return answer.Outcome switch
         {
-            answered = call.Wait(Timeout);
-        }
-        catch (AggregateException)
-        {
-            answered = false; // a fault is logged by the client; to the gate it is silence
-        }
-        var waited = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
-
-        if (!answered)
-        {
-            if (++consecutiveTimeouts >= TimeoutsBeforeDegraded)
-            {
-                consecutiveTimeouts = 0;
-                session.MarkDegraded(DegradedCause.Timeouts);
-            }
-            return (GateVerdict.Swallow, GateRule.TimedOut, waited);
-        }
-        consecutiveTimeouts = 0;
-        return (call.Result ? GateVerdict.Swallow : GateVerdict.Pass, GateRule.Answered, waited);
+            KeyOutcome.Consumed => (GateVerdict.Swallow, GateRule.Answered, answer.WaitMs),
+            KeyOutcome.Declined => (GateVerdict.Pass, GateRule.Answered, answer.WaitMs),
+            _ => (GateVerdict.Swallow, GateRule.TimedOut, answer.WaitMs),
+        };
     }
+
+    /// <summary>A press fcitx5 was told about, and the session it was told to: its release goes there too.</summary>
+    private readonly record struct SentKey(ForwardingSession To, KeyEvent Key);
 
     /// <summary>What is known about a key that is down: where it went, and the press fcitx5 was told about, if any.</summary>
     /// <param name="Provisional">A printing key whose char has not come yet: swallowed so far, the char decides.</param>
     /// <param name="Toggled">The toggle chord: its repeats must not toggle again.</param>
     /// <param name="Untouched">The gate was not acting at the press: its chars and its release are <see cref="GateRule.Inactive"/> too, so nothing typed past the gate is traced (ticket 18).</param>
-    private readonly record struct Press(GateVerdict Verdict, bool Provisional = false, KeyEvent? Sent = null, bool Toggled = false, bool Untouched = false);
+    private readonly record struct Press(GateVerdict Verdict, bool Provisional = false, SentKey? Sent = null, bool Toggled = false, bool Untouched = false);
 }

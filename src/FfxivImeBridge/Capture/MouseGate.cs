@@ -21,7 +21,7 @@ internal sealed class MouseGate(Func<CompositionPlan?> lastPlan)
     /// <summary>Where each button's press went; null while the button is up (or its press went by before the gate saw it).</summary>
     private readonly GateVerdict?[] presses = new GateVerdict?[Enum.GetValues<MouseButton>().Length];
 
-    /// <summary>The session whose context is called; null while there is none.</summary>
+    /// <summary>The session that is called; null while there is none.</summary>
     public ForwardingSession? Session { get; set; }
 
     public GateDecision Decide(MouseMessage message)
@@ -40,7 +40,7 @@ internal sealed class MouseGate(Func<CompositionPlan?> lastPlan)
 
     private GateDecision DecidePressOrWheel(MouseMessage message)
     {
-        if (Session is not { GateActive: true, ChatBoxFocused: true, Context: { } context } session || session.Composition.Preedit.IsEmpty || lastPlan() is not { } plan)
+        if (Session is not { GateActive: true, ChatBoxFocused: true } session || session.Composition.Preedit.IsEmpty || lastPlan() is not { } plan)
             return new GateDecision(GateVerdict.Pass, GateRule.Inactive);
 
         switch (plan.ZoneAt(message.Point))
@@ -53,8 +53,8 @@ internal sealed class MouseGate(Func<CompositionPlan?> lastPlan)
 
         if (message.Kind == MouseMessageKind.Wheel)
         {
-            if (message.WheelDelta > 0) context.PreviousPage();
-            else context.NextPage();
+            if (message.WheelDelta > 0) session.PreviousPage();
+            else session.NextPage();
             return new GateDecision(GateVerdict.Swallow, GateRule.Page);
         }
 
@@ -64,13 +64,13 @@ internal sealed class MouseGate(Func<CompositionPlan?> lastPlan)
         switch (region.Action)
         {
             case HitAction.SelectCandidate:
-                context.SelectCandidate(region.Candidate);
+                session.SelectCandidate(region.Candidate);
                 return new GateDecision(GateVerdict.Swallow, GateRule.Candidate);
             case HitAction.PreviousPage:
-                context.PreviousPage();
+                session.PreviousPage();
                 return new GateDecision(GateVerdict.Swallow, GateRule.Page);
             default:
-                context.NextPage();
+                session.NextPage();
                 return new GateDecision(GateVerdict.Swallow, GateRule.Page);
         }
     }
