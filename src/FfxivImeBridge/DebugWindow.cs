@@ -207,7 +207,7 @@ internal sealed class DebugWindow : Window
 
     private string SessionSummary(Session.ForwardingSession? session) => session is null
         ? (bridge.Inert ? "Session: inert (fcitx5 not reachable)" : "Session: connecting…")
-        : $"Session: forwarding={(session.Forwarding ? "on" : "off")} degraded={session.Degraded} gate={(session.GateActive ? "active" : "idle")} input method={session.CurrentInputMethod?.UniqueName ?? "-"} glyph={session.IndicatorGlyph ?? "-"}";
+        : $"Session: forwarding={(session.Forwarding ? "on" : "off")} degraded={session.Degraded} gate={(session.GateActive ? "active" : "idle")} input method={session.CurrentInputMethod?.UniqueName ?? "-"} glyph={session.IndicatorGlyph?.Text ?? "-"}";
 
     /// <summary>The snapshot the overlay draws: what fcitx5 last sent, so a wrong drawing can be told from a wrong snapshot.</summary>
     private static string CompositionSummary(Session.ForwardingSession? session)

@@ -43,15 +43,12 @@ public sealed class InputContext : IAsyncDisposable
     /// <summary>Input method fcitx5 last reported for this context (after <c>FocusIn</c> or a switch); null until then.</summary>
     public InputMethodInfo? CurrentInputMethod { get; private set; }
 
-    public event Action<CompositionState>? StateChanged;
-    /// <summary>Raised for every <c>UpdateClientSideUI</c> specifically (after it is merged into <see cref="State"/>); <see cref="StateChanged"/> also fires for the preedit signal.</summary>
+    /// <summary>Raised for every <c>UpdateClientSideUI</c>, after it is merged into <see cref="State"/>.</summary>
     public event Action<CompositionState>? PanelUpdated;
     public event Action<string>? Committed;
     /// <summary>fcitx5 wants this key delivered to the application as if it were typed (it handled the press but is passing it on).</summary>
     public event Action<KeyEvent>? ForwardKey;
     public event Action<InputMethodInfo>? InputMethodChanged;
-    /// <summary>(offset, size): delete text around the cursor. Not used by Mozc in a plain text field; surfaced for completeness.</summary>
-    public event Action<(int Offset, uint Size)>? DeleteSurroundingText;
 
     internal async Task SubscribeAsync(CancellationToken cancellationToken)
     {
@@ -61,7 +58,6 @@ public sealed class InputContext : IAsyncDisposable
         subscriptions.Add(await Watch("CommitString", static (m, _) => m.GetBodyReader().ReadString(), n => Committed?.Invoke(n)).AsTask().WaitAsync(cancellationToken).ConfigureAwait(false));
         subscriptions.Add(await Watch("ForwardKey", ReadForwardKey, n => ForwardKey?.Invoke(n)).AsTask().WaitAsync(cancellationToken).ConfigureAwait(false));
         subscriptions.Add(await Watch("CurrentIM", ReadCurrentIM, n => { CurrentInputMethod = n; InputMethodChanged?.Invoke(n); }).AsTask().WaitAsync(cancellationToken).ConfigureAwait(false));
-        subscriptions.Add(await Watch("DeleteSurroundingText", ReadDeleteSurrounding, n => DeleteSurroundingText?.Invoke(n)).AsTask().WaitAsync(cancellationToken).ConfigureAwait(false));
     }
 
     private ValueTask<IDisposable> Watch<T>(string signal, MessageValueReader<T> reader, Action<T> handler)
@@ -75,11 +71,7 @@ public sealed class InputContext : IAsyncDisposable
             state: null);
     }
 
-    private void Set(CompositionState next)
-    {
-        Volatile.Write(ref state, next);
-        StateChanged?.Invoke(next);
-    }
+    private void Set(CompositionState next) => Volatile.Write(ref state, next);
 
     /// <summary>Returns true when fcitx5 consumed the key; false means the application should handle it itself.</summary>
     public Task<bool> ProcessKeyEventAsync(KeyEvent key, CancellationToken cancellationToken = default)
@@ -115,18 +107,6 @@ public sealed class InputContext : IAsyncDisposable
         using var writer = connection.GetMessageWriter();
         writer.WriteMethodCallHeader(Fcitx5Names.BusName, Path, Fcitx5Names.InputContextInterface, "SetCapability", "t", MethodCall.Flags);
         writer.WriteUInt64((ulong)capabilities);
-        return connection.CallMethodAsync(writer.CreateMessage()).WaitAsync(cancellationToken);
-    }
-
-    /// <summary>Tell fcitx5 where the cursor is on screen, in case it ever draws anything itself.</summary>
-    public Task SetCursorRectAsync(int x, int y, int width, int height, CancellationToken cancellationToken = default)
-    {
-        using var writer = connection.GetMessageWriter();
-        writer.WriteMethodCallHeader(Fcitx5Names.BusName, Path, Fcitx5Names.InputContextInterface, "SetCursorRect", "iiii", MethodCall.Flags);
-        writer.WriteInt32(x);
-        writer.WriteInt32(y);
-        writer.WriteInt32(width);
-        writer.WriteInt32(height);
         return connection.CallMethodAsync(writer.CreateMessage()).WaitAsync(cancellationToken);
     }
 
@@ -238,11 +218,5 @@ public sealed class InputContext : IAsyncDisposable
         // s s s : name, uniqueName, languageCode
         var reader = message.GetBodyReader();
         return new InputMethodInfo(reader.ReadString(), reader.ReadString(), reader.ReadString());
-    }
-
-    private static (int, uint) ReadDeleteSurrounding(Message message, object? _)
-    {
-        var reader = message.GetBodyReader();
-        return (reader.ReadInt32(), reader.ReadUInt32());
     }
 }

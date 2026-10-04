@@ -11,31 +11,6 @@ public static class KeyCode
 {
     private const uint EvdevOffset = 8;
 
-    // Linux evdev codes (input-event-codes.h) for keys a chat box cares about.
-    public const uint Esc = 1 + EvdevOffset;
-    public const uint Backspace = 14 + EvdevOffset;
-    public const uint Tab = 15 + EvdevOffset;
-    public const uint Enter = 28 + EvdevOffset;
-    public const uint LeftCtrl = 29 + EvdevOffset;
-    public const uint LeftShift = 42 + EvdevOffset;
-    public const uint RightShift = 54 + EvdevOffset;
-    public const uint LeftAlt = 56 + EvdevOffset;
-    public const uint Space = 57 + EvdevOffset;
-    public const uint RightCtrl = 97 + EvdevOffset;
-    public const uint RightAlt = 100 + EvdevOffset;
-    public const uint Home = 102 + EvdevOffset;
-    public const uint Up = 103 + EvdevOffset;
-    public const uint PageUp = 104 + EvdevOffset;
-    public const uint Left = 105 + EvdevOffset;
-    public const uint Right = 106 + EvdevOffset;
-    public const uint End = 107 + EvdevOffset;
-    public const uint Down = 108 + EvdevOffset;
-    public const uint PageDown = 109 + EvdevOffset;
-    public const uint Delete = 111 + EvdevOffset;
-    public const uint LeftMeta = 125 + EvdevOffset;
-
-    public static uint FromEvdev(uint evdevCode) => evdevCode + EvdevOffset;
-
     /// <summary>
     /// X keycode for a PC set-1 scancode as Windows reports it (bits 16–23 of
     /// <c>WM_KEYDOWN</c> lParam, <paramref name="extended"/> = bit 24). Returns 0

@@ -11,6 +11,11 @@ namespace FfxivImeBridge.Fcitx.Tests;
 public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
+
+    // X keycodes: evdev codes + 8.
+    private const uint EscKey = 1 + 8;
+    private const uint EnterKey = 28 + 8;
+    private const uint SpaceKey = 57 + 8;
     private FcitxConnection connection = null!;
 
     public async Task InitializeAsync() => connection = await FcitxConnection.ConnectAsync(cancellationToken: Cts().Token);
@@ -41,7 +46,6 @@ public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
         Assert.Equal("s", Signature("signal", "CommitString"));
         Assert.Equal("uub", Signature("signal", "ForwardKey"));
         Assert.Equal("sss", Signature("signal", "CurrentIM"));
-        Assert.Equal("iu", Signature("signal", "DeleteSurroundingText"));
         Assert.Equal("uuubu", Signature("method", "ProcessKeyEvent"));
         Assert.Equal("t", Signature("method", "SetCapability"));
         Assert.Equal("i", Signature("method", "SelectCandidate"));
@@ -86,9 +90,9 @@ public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
         output.WriteLine($"aux: {string.Concat(context.State.AuxUp.Select(a => a.Text))}; predictions: {string.Join(" | ", context.State.Candidates.Select(c => c.Text))}");
 
         // First Space converts (highlighted segment); second Space opens the candidate list.
-        Assert.True(await Tap(context, KeyEvent.Press(KeySym.Space, KeyCode.Space)));
+        Assert.True(await Tap(context, KeyEvent.Press(KeySym.Space, SpaceKey)));
         Assert.Contains(context.State.Preedit.Segments, s => s.Format.HasFlag(TextFormat.Highlight));
-        Assert.True(await Tap(context, KeyEvent.Press(KeySym.Space, KeyCode.Space)));
+        Assert.True(await Tap(context, KeyEvent.Press(KeySym.Space, SpaceKey)));
         var withCandidates = context.State;
         output.WriteLine($"candidates: {string.Join(" | ", withCandidates.Candidates.Select(c => $"{c.Label}{c.Text}"))} layout={withCandidates.Layout} selected={withCandidates.SelectedCandidate} prev={withCandidates.HasPreviousPage} next={withCandidates.HasNextPage}");
         Assert.NotEmpty(withCandidates.Candidates);
@@ -98,7 +102,7 @@ public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
         var selectedText = withCandidates.Candidates[withCandidates.SelectedCandidate].Text;
 
         // Enter commits the selected candidate, empties the preedit and dismisses the candidates.
-        Assert.True(await Tap(context, KeyEvent.Press(KeySym.Return, KeyCode.Enter)));
+        Assert.True(await Tap(context, KeyEvent.Press(KeySym.Return, EnterKey)));
         var text = Assert.Single(committed);
         output.WriteLine($"committed: {text}");
         Assert.StartsWith(text, selectedText);
@@ -106,7 +110,7 @@ public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
         Assert.Empty(context.State.Candidates);
 
         // With nothing composed, Enter is not fcitx5's to handle: this is what lets the game send the message.
-        Assert.False(await Tap(context, KeyEvent.Press(KeySym.Return, KeyCode.Enter)));
+        Assert.False(await Tap(context, KeyEvent.Press(KeySym.Return, EnterKey)));
         Assert.Single(committed);
     }
 
@@ -122,7 +126,7 @@ public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
         await Tap(context, KeyEvent.Char('i'));
         Assert.Equal("に", context.State.Preedit.Text);
 
-        Assert.True(await Tap(context, KeyEvent.Press(KeySym.Escape, KeyCode.Esc)));
+        Assert.True(await Tap(context, KeyEvent.Press(KeySym.Escape, EscKey)));
         Assert.False(context.State.IsComposing);
         Assert.Empty(committed);
     }
@@ -176,7 +180,7 @@ public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
         Assert.True(await context.ProcessKeyEventAsync(KeyEvent.Char('a'), Cts().Token));
         Assert.False(await context.ProcessKeyEventAsync(KeyEvent.Char('a').AsRelease(), Cts().Token));
         Assert.Equal("あ", context.State.Preedit.Text);
-        await Tap(context, KeyEvent.Press(KeySym.Escape, KeyCode.Esc));
+        await Tap(context, KeyEvent.Press(KeySym.Escape, EscKey));
 
         // Documented Mozc quirk: without a keycode the key is swallowed but nothing is composed.
         Assert.True(await context.ProcessKeyEventAsync(new KeyEvent(KeySym.FromChar('a'), KeyCode: 0), Cts().Token));

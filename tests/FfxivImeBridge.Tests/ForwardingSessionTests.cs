@@ -244,7 +244,19 @@ public sealed class ForwardingSessionTests
         session.Forwarding = true;
         Context.RaiseInputMethod(uniqueName);
         session.Tick();
-        Assert.Equal(glyph, session.IndicatorGlyph);
+        Assert.Equal(glyph, session.IndicatorGlyph?.Text);
+    }
+
+    [Theory]
+    [InlineData("mozc", true)]
+    [InlineData("keyboard-us", false)]
+    [InlineData("pinyin", false)]
+    public void Only_mozc_is_shown_as_hiragana(string uniqueName, bool hiragana)
+    {
+        session.Forwarding = true;
+        Context.RaiseInputMethod(uniqueName);
+        session.Tick();
+        Assert.Equal(hiragana, session.IndicatorGlyph?.State == IndicatorState.Hiragana);
     }
 
     [Fact]
@@ -296,7 +308,7 @@ public sealed class ForwardingSessionTests
         Assert.True(session.Degraded);
         Assert.True(session.Forwarding); // the user's choice is kept underneath
         Assert.False(session.GateActive);
-        Assert.Equal("!", session.IndicatorGlyph);
+        Assert.Equal(new IndicatorGlyph(IndicatorState.Degraded, "!"), session.IndicatorGlyph);
         Assert.Equal(["IME Bridge: forwarding on", "IME Bridge: fcitx5 left the bus, forwarding degraded"], chat);
 
         fcitx.Leave();
@@ -508,7 +520,7 @@ public sealed class ForwardingSessionTests
         Assert.True(session.ConnectionLost);
         Assert.True(session.Forwarding);
         Assert.False(session.GateActive);
-        Assert.Equal("!", session.IndicatorGlyph);
+        Assert.Equal(new IndicatorGlyph(IndicatorState.Degraded, "!"), session.IndicatorGlyph);
         Assert.Equal(["IME Bridge: forwarding on", "IME Bridge: lost the connection to fcitx5, forwarding degraded"], chat);
 
         // Focus edges have nothing to tell a dead connection, and fcitx5 "returning" on it means nothing.

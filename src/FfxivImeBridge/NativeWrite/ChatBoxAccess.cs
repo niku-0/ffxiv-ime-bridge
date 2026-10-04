@@ -1,6 +1,7 @@
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using FfxivImeBridge.Capture;
 using FfxivImeBridge.Rendering;
 
 namespace FfxivImeBridge.NativeWrite;
@@ -13,12 +14,10 @@ namespace FfxivImeBridge.NativeWrite;
 /// </summary>
 internal static unsafe class ChatBoxAccess
 {
-    private const string ChatLogAddon = "ChatLog";
-
     /// <summary><c>AddonChatLog.TextInput</c>: the Chat Box, focused or not. Null while the addon is not loaded.</summary>
     public static AtkComponentTextInput* Find(IGameGui gui)
     {
-        var addon = gui.GetAddonByName<AddonChatLog>(ChatLogAddon);
+        var addon = gui.GetAddonByName<AddonChatLog>(FocusSnapshot.ChatLogAddon);
         return addon == null ? null : addon->TextInput;
     }
 
@@ -44,7 +43,7 @@ internal static unsafe class ChatBoxAccess
     /// </summary>
     public static ChannelLabel? ChannelLabel(IGameGui gui)
     {
-        var addon = gui.GetAddonByName<AddonChatLog>(ChatLogAddon);
+        var addon = gui.GetAddonByName<AddonChatLog>(FocusSnapshot.ChatLogAddon);
         if (addon == null || addon->CurrentChannelTextNode == null) return null;
         var text = addon->CurrentChannelTextNode;
         return new ChannelLabel(Box(&text->AtkResNode)!.Value, text->FontSize, AccumulatedScaleY(&text->AtkResNode), text->TextColor.RGBA, text->EdgeColor.RGBA);

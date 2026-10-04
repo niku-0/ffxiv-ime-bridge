@@ -51,8 +51,6 @@ internal sealed class InputContextClient : IInputContextClient
         context.ForwardKey += key => log.Information("Session: ForwardKey ignored: keysym 0x{KeySym:X} state {State} release={Release}", key.KeySym, key.State, key.IsRelease);
     }
 
-    public InputMethodInfo? CurrentInputMethod => context.CurrentInputMethod;
-
     public CompositionState State => context.State;
 
     public event Action<InputMethodInfo>? InputMethodChanged;
@@ -104,7 +102,6 @@ internal sealed class InputContextClient : IInputContextClient
         LogFault(call, name);
     }
 
-    private void LogFault(Task call, string name) => call.ContinueWith(
-        t => log.Warning("Session: {Call} on {Path} failed: {Error}", name, context.Path, t.Exception?.InnerException?.Message ?? "unknown"),
-        CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+    private void LogFault(Task call, string name) =>
+        call.OnFault(ex => log.Warning("Session: {Call} on {Path} failed: {Error}", name, context.Path, ex.Message));
 }

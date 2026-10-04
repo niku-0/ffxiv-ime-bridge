@@ -91,9 +91,7 @@ internal sealed class OverlayFont : IDisposable
             {
                 pending = atlas.NewGameFontHandle(new GameFontStyle(GameFontFamily.Axis, wantedPx));
                 pendingPx = wantedPx;
-                _ = atlas.BuildFontsAsync().ContinueWith(
-                    t => log.Warning(t.Exception!, "Overlay font: building AXIS at {Size} px failed", wantedPx),
-                    TaskContinuationOptions.OnlyOnFaulted);
+                atlas.BuildFontsAsync().OnFault(ex => log.Warning(ex, "Overlay font: building AXIS at {Size} px failed", wantedPx));
             }
             return current ?? pending!;
         }

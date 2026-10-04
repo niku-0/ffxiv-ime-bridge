@@ -157,7 +157,7 @@ public sealed class KeyTranslationTests
         Assert.Equal(KeyClass.Modifier, KeyTranslation.Classify(down, None));
         var e = KeyTranslation.FromKey(down, None, time: 1);
         Assert.Equal(KeySym.AltR, e.KeySym);
-        Assert.Equal(KeyCode.RightAlt, e.KeyCode);
+        Assert.Equal(100 + 8u, e.KeyCode);
     }
 
     [Fact]
@@ -275,16 +275,16 @@ public sealed class KeyTranslationTests
     // --- KeyEvent from a Fixed or Modifier key message ---
 
     [Theory]
-    [InlineData(VkReturn, 0x1C, false, KeySym.Return, KeyCode.Enter)]
-    [InlineData(VkEscape, 0x01, false, KeySym.Escape, KeyCode.Esc)]
-    [InlineData(VkBack, 0x0E, false, KeySym.BackSpace, KeyCode.Backspace)]
-    [InlineData(VkTab, 0x0F, false, KeySym.Tab, KeyCode.Tab)]
-    [InlineData(VkDelete, 0x53, true, KeySym.Delete, KeyCode.Delete)]
-    [InlineData(VkLeft, 0x4B, true, KeySym.Left, KeyCode.Left)]
-    [InlineData(VkUp, 0x48, true, KeySym.Up, KeyCode.Up)]
-    [InlineData(VkHome, 0x47, true, KeySym.Home, KeyCode.Home)]
-    [InlineData(VkEnd, 0x4F, true, KeySym.End, KeyCode.End)]
-    [InlineData(VkPrior, 0x49, true, KeySym.PageUp, KeyCode.PageUp)]
+    [InlineData(VkReturn, 0x1C, false, KeySym.Return, 28 + 8u)]
+    [InlineData(VkEscape, 0x01, false, KeySym.Escape, 1 + 8u)]
+    [InlineData(VkBack, 0x0E, false, KeySym.BackSpace, 14 + 8u)]
+    [InlineData(VkTab, 0x0F, false, KeySym.Tab, 15 + 8u)]
+    [InlineData(VkDelete, 0x53, true, KeySym.Delete, 111 + 8u)]
+    [InlineData(VkLeft, 0x4B, true, KeySym.Left, 105 + 8u)]
+    [InlineData(VkUp, 0x48, true, KeySym.Up, 103 + 8u)]
+    [InlineData(VkHome, 0x47, true, KeySym.Home, 102 + 8u)]
+    [InlineData(VkEnd, 0x4F, true, KeySym.End, 107 + 8u)]
+    [InlineData(VkPrior, 0x49, true, KeySym.PageUp, 104 + 8u)]
     [InlineData(VkF1, 0x3B, false, KeySym.F1, 0x3B + 8u)]
     [InlineData(VkF12, 0x58, false, KeySym.F12, 0x58 + 8u)]
     [InlineData(VkF24, 0x76, false, 0xffd5u, 0x76 + 8u)]
@@ -352,13 +352,13 @@ public sealed class KeyTranslationTests
     }
 
     [Theory]
-    [InlineData(VkShift, 0x2A, false, KeySym.ShiftL, KeyCode.LeftShift)]
-    [InlineData(VkShift, 0x36, false, KeySym.ShiftR, KeyCode.RightShift)]
-    [InlineData(VkControl, 0x1D, false, KeySym.ControlL, KeyCode.LeftCtrl)]
-    [InlineData(VkControl, 0x1D, true, KeySym.ControlR, KeyCode.RightCtrl)]
-    [InlineData(VkMenu, 0x38, false, KeySym.AltL, KeyCode.LeftAlt)]
-    [InlineData(VkMenu, 0x38, true, KeySym.AltR, KeyCode.RightAlt)]
-    [InlineData(VkLWin, 0x5B, true, KeySym.SuperL, KeyCode.LeftMeta)]
+    [InlineData(VkShift, 0x2A, false, KeySym.ShiftL, 42 + 8u)]
+    [InlineData(VkShift, 0x36, false, KeySym.ShiftR, 54 + 8u)]
+    [InlineData(VkControl, 0x1D, false, KeySym.ControlL, 29 + 8u)]
+    [InlineData(VkControl, 0x1D, true, KeySym.ControlR, 97 + 8u)]
+    [InlineData(VkMenu, 0x38, false, KeySym.AltL, 56 + 8u)]
+    [InlineData(VkMenu, 0x38, true, KeySym.AltR, 100 + 8u)]
+    [InlineData(VkLWin, 0x5B, true, KeySym.SuperL, 125 + 8u)]
     [InlineData(VkCapital, 0x3A, false, 0xffe5u, 0x3A + 8u)]
     [InlineData(VkNumLock, 0x45, false, 0xff7fu, 0x45 + 8u)]
     [InlineData(VkScroll, 0x46, false, 0xff14u, 0x46 + 8u)]
@@ -376,7 +376,7 @@ public sealed class KeyTranslationTests
     public void A_release_is_its_press_with_the_release_flag()
     {
         var enter = KeyTranslation.FromKey(Down(VkReturn, 0x1C), None, time: 1);
-        Assert.Equal(new KeyEvent(KeySym.Return, KeyCode.Enter, KeyState.None, IsRelease: true, Time: 1), enter.AsRelease());
+        Assert.Equal(new KeyEvent(KeySym.Return, 28 + 8u, KeyState.None, IsRelease: true, Time: 1), enter.AsRelease());
 
         var at = KeyTranslation.FromChar(Char('@', Sc2), AltGr, time: 1)!.Value;
         Assert.Equal(new KeyEvent((uint)'@', at.KeyCode, KeyState.Ctrl | KeyState.Alt, IsRelease: true, Time: 1), at.AsRelease());
@@ -387,7 +387,7 @@ public sealed class KeyTranslationTests
     {
         var release = KeyTranslation.FromKey(Up(VkShift, 0x2A), None, time: 2);
 
-        Assert.Equal(new KeyEvent(KeySym.ShiftL, KeyCode.LeftShift, KeyState.None, IsRelease: true, Time: 2), release);
+        Assert.Equal(new KeyEvent(KeySym.ShiftL, 42 + 8u, KeyState.None, IsRelease: true, Time: 2), release);
     }
 
     [Fact]

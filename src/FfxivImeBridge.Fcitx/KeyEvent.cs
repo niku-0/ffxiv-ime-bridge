@@ -8,7 +8,6 @@ namespace FfxivImeBridge.Fcitx;
 public readonly record struct KeyEvent(uint KeySym, uint KeyCode, KeyState State = KeyState.None, bool IsRelease = false, uint Time = 0)
 {
     public static KeyEvent Press(uint keySym, uint keyCode, KeyState state = KeyState.None) => new(keySym, keyCode, state);
-    public static KeyEvent Release(uint keySym, uint keyCode, KeyState state = KeyState.None) => new(keySym, keyCode, state, IsRelease: true);
 
     /// <summary>A press of an ASCII letter, digit or space on its usual physical key.</summary>
     public static KeyEvent Char(char c, KeyState state = KeyState.None) => new(Fcitx.KeySym.FromChar(c), Fcitx.KeyCode.FromAsciiChar(c), state);

@@ -132,19 +132,8 @@ internal sealed class ForwardingSession : IAsyncDisposable
     /// <summary>Chat Box focus as last observed, for the Indicator.</summary>
     public bool ChatBoxFocused => chatBoxFocused;
 
-    /// <summary>
-    /// What the Indicator shows: <c>!</c> while Degraded, else the context's
-    /// input method (<c>あ</c> Mozc, <c>A</c> a keyboard layout, its initial
-    /// otherwise), null until fcitx5 has named one.
-    /// </summary>
-    public string? IndicatorGlyph => Degraded ? "!" : CurrentInputMethod is { } im ? GlyphFor(im.UniqueName) : null;
-
-    private static string GlyphFor(string uniqueName) => uniqueName switch
-    {
-        "mozc" => "あ",
-        _ when uniqueName.StartsWith("keyboard-", StringComparison.Ordinal) => "A",
-        _ => uniqueName[..1].ToUpperInvariant(),
-    };
+    /// <summary>What the Indicator shows: Degraded, else the context's input method; null until fcitx5 has named one.</summary>
+    public IndicatorGlyph? IndicatorGlyph => Degraded ? Session.IndicatorGlyph.Degraded : CurrentInputMethod is { } im ? Session.IndicatorGlyph.For(im) : null;
 
     /// <summary>The next committed text, in the order fcitx5 sent it. Drained on the game thread: from the hook after a waited reply, and from the tick.</summary>
     public bool TryTakeCommit(out string text) => commits.TryDequeue(out text!);
@@ -323,8 +312,7 @@ internal sealed class ForwardingSession : IAsyncDisposable
     private void Forget(ValueTask task)
     {
         if (task.IsCompletedSuccessfully) return;
-        task.AsTask().ContinueWith(t => log($"disposing the old input context failed: {t.Exception?.InnerException?.Message}"),
-            CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+        task.AsTask().OnFault(ex => log($"disposing the old input context failed: {ex.Message}"));
     }
 
     /// <summary>Focus lost for good (Reset, FocusOut) and the context destroyed — unless there is <see cref="NothingToTell"/>, when it is only let go. The caller bounds the wait (the plugin's unload budget).</summary>

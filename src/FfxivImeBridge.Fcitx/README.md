@@ -21,8 +21,7 @@ Everything below was verified live against **fcitx5 5.1.22 + fcitx5-mozc
 
 Context methods used: `SetCapability(t)`, `FocusIn()`, `FocusOut()`,
 `ProcessKeyEvent(uuubu) → b` (keysym, keycode, state, isRelease, time),
-`Reset()`, `SelectCandidate(i)`, `NextPage()`, `PrevPage()`,
-`SetCursorRect(iiii)`, `DestroyIC()`.
+`Reset()`, `SelectCandidate(i)`, `NextPage()`, `PrevPage()`, `DestroyIC()`.
 
 Signals consumed (signatures asserted by
 `Creates_a_context_whose_interface_matches_what_the_library_assumes`):
@@ -34,7 +33,6 @@ Signals consumed (signatures asserted by
 | `CommitString` | `s` | text to insert |
 | `CurrentIM` | `s s s` | name, unique name, language code |
 | `ForwardKey` | `u u b` | keysym, state, isRelease: fcitx5 wants the key delivered to the app |
-| `DeleteSurroundingText` | `i u` | offset, size |
 
 Signals are emitted *before* the method reply that caused them, on the same
 connection, so `State` is already updated when `await ProcessKeyEventAsync`

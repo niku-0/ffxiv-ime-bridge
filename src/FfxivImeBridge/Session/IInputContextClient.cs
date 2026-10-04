@@ -11,9 +11,6 @@ namespace FfxivImeBridge.Session;
 /// </summary>
 internal interface IInputContextClient : IAsyncDisposable
 {
-    /// <summary>The input method fcitx5 last reported for this context; null until the first <c>CurrentIM</c>.</summary>
-    InputMethodInfo? CurrentInputMethod { get; }
-
     /// <summary>What fcitx5 last asked to have drawn; already updated when a <see cref="ProcessKeyAsync"/> reply arrives. Any thread.</summary>
     CompositionState State { get; }
 

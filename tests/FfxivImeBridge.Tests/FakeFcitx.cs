@@ -24,8 +24,6 @@ internal sealed class FakeInputContext : IInputContextClient
     /// <summary>Scripted replies, consumed one per <see cref="ProcessKeyAsync"/> before <see cref="Handled"/> applies; a never-completing task is a timeout.</summary>
     public Queue<Task<bool>> Replies { get; } = new();
 
-    public InputMethodInfo? CurrentInputMethod { get; private set; }
-
     public CompositionState State { get; set; } = CompositionState.Idle;
 
     public event Action<InputMethodInfo>? InputMethodChanged;
@@ -66,9 +64,7 @@ internal sealed class FakeInputContext : IInputContextClient
     /// <summary>What fcitx5 sends as <c>CurrentIM</c> after every <c>FocusIn</c>.</summary>
     public void RaiseInputMethod(string uniqueName)
     {
-        var info = new InputMethodInfo(uniqueName, uniqueName, "");
-        CurrentInputMethod = info;
-        InputMethodChanged?.Invoke(info);
+        InputMethodChanged?.Invoke(new InputMethodInfo(uniqueName, uniqueName, ""));
     }
 
     public void RaiseCommit(string text) => Committed?.Invoke(text);

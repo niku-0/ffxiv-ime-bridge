@@ -4,6 +4,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Plugin.Services;
 using FfxivImeBridge.NativeWrite;
 using FfxivImeBridge.Rendering;
+using FfxivImeBridge.Session;
 
 namespace FfxivImeBridge;
 
@@ -59,25 +60,25 @@ internal sealed class Indicator(Bridge bridge, IGameGui gui, ConfigStore config,
         if (!Visible || gui.GameUiHidden || bridge.Session is not { Forwarding: true, ChatBoxFocused: true, IndicatorGlyph: { } glyph }) return;
         // The text node reports hidden while the box is empty, but its position is still valid (ticket 04).
         if (ChatBoxAccess.TextNodeBox(gui) is not { } text || ChatBoxAccess.Style(gui) is not { } style) return;
-        var warning = glyph == "!";
+        var warning = glyph.State == IndicatorState.Degraded;
 
         if (ChatBoxAccess.ChannelLabel(gui) is { } label)
         {
             using var pushed = font.PushForIndicator(label.FontSizePt, label.Scale);
-            var size = pushed.Measure(glyph);
+            var size = pushed.Measure(glyph.Text);
             var left = text.X - LeftOfTextEdge * label.Scale;
             var centreY = label.Box.Y + label.Box.Height / 2;
             if (config.Current.IndicatorStyle == IndicatorStyle.Badge && BadgeFor(glyph) is { } badge)
                 DrawBadge(pushed, badge, left, centreY, glyph, warning ? Warning : label.Edge, label.Scale);
             else
-                DrawOutlined(pushed, new Vector2(left, centreY - size.Y / 2), glyph, warning ? Warning : label.Ink, label.Edge);
+                DrawOutlined(pushed, new Vector2(left, centreY - size.Y / 2), glyph.Text, warning ? Warning : label.Ink, label.Edge);
         }
         else
         {
             using var pushed = font.PushFor(style);
-            var size = pushed.Measure(glyph);
+            var size = pushed.Measure(glyph.Text);
             var at = new Vector2(text.X - size.X - Gap, text.Y + (text.Height - size.Y) / 2);
-            DrawOutlined(pushed, at, glyph, warning ? Warning : style.PreeditInk ?? Ink, Shadow);
+            DrawOutlined(pushed, at, glyph.Text, warning ? Warning : style.PreeditInk ?? Ink, Shadow);
         }
     }
 
@@ -91,8 +92,8 @@ internal sealed class Indicator(Bridge bridge, IGameGui gui, ConfigStore config,
     }
 
     /// <summary>The badge texture for this frame — the game's own <c>あ</c> badge, or the empty frame for any other glyph — or null while it is not loaded (a shared texture must not be held across frames).</summary>
-    private IDalamudTextureWrap? BadgeFor(string glyph) =>
-        textures.GetFromFile(glyph == "あ" ? hiraganaBadgePath : frameBadgePath).GetWrapOrDefault();
+    private IDalamudTextureWrap? BadgeFor(IndicatorGlyph glyph) =>
+        textures.GetFromFile(glyph.State == IndicatorState.Hiragana ? hiraganaBadgePath : frameBadgePath).GetWrapOrDefault();
 
     /// <summary>
     /// The badge, its left edge at <paramref name="left"/> and centred on
@@ -101,22 +102,22 @@ internal sealed class Indicator(Bridge bridge, IGameGui gui, ConfigStore config,
     /// centred in the cream by its ink (the font's own glyph bounds), softened —
     /// four faint half-pixel copies under it — so its edge is not a hard step.
     /// </summary>
-    private static void DrawBadge(PushedFont pushed, IDalamudTextureWrap badge, float left, float centreY, string glyph, Vector4 ink, float scale)
+    private static void DrawBadge(PushedFont pushed, IDalamudTextureWrap badge, float left, float centreY, IndicatorGlyph glyph, Vector4 ink, float scale)
     {
         var draw = ImGui.GetForegroundDrawList();
         scale *= BadgeScale;
         var size = badge.Size * scale;
         var min = new Vector2(left, MathF.Round(centreY - size.Y / 2));
         draw.AddImage(badge.Handle, min, min + size);
-        if (glyph == "あ") return;
+        if (glyph.State == IndicatorState.Hiragana) return;
 
         var interiorMin = min + new Vector2(FrameInterior.X, FrameInterior.Y) * scale;
         var interiorSize = new Vector2(FrameInterior.Width, FrameInterior.Height) * scale;
-        var inkBox = pushed.InkOf(glyph);
+        var inkBox = pushed.InkOf(glyph.Text);
         // The pen position that centres the ink in the interior.
         var at = interiorMin + (interiorSize - new Vector2(inkBox.Width, inkBox.Height)) / 2 - new Vector2(inkBox.X, inkBox.Y);
         var soft = ImGui.GetColorU32(ink with { W = ink.W * BadgeSoftenAlpha });
-        foreach (var direction in Outline) draw.AddText(pushed.Font, pushed.SizePx, at + direction * BadgeSoften, soft, glyph);
-        draw.AddText(pushed.Font, pushed.SizePx, at, ImGui.GetColorU32(ink), glyph);
+        foreach (var direction in Outline) draw.AddText(pushed.Font, pushed.SizePx, at + direction * BadgeSoften, soft, glyph.Text);
+        draw.AddText(pushed.Font, pushed.SizePx, at, ImGui.GetColorU32(ink), glyph.Text);
     }
 }
