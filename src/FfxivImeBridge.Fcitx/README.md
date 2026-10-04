@@ -18,6 +18,7 @@ Everything below was verified live against **fcitx5 5.1.22 + fcitx5-mozc
 | Context interface | `org.fcitx.Fcitx.InputContext1` at `/org/freedesktop/portal/inputcontext/N` |
 | Controller | `/controller`, `org.fcitx.Fcitx.Controller1`: `CurrentInputMethod() → s`, `SetCurrentIM(s)` |
 | Presence | the bus's `NameOwnerChanged(sss)` with `arg0=org.fcitx.Fcitx5`, surfaced as `FcitxConnection.FcitxAvailabilityChanged` (`WatchAvailabilityAsync`) |
+| Tray icon | fcitx5's `org.kde.StatusNotifierItem`, found among `org.kde.StatusNotifierWatcher`'s `RegisteredStatusNotifierItems` by `Id = "Fcitx"`; its `IconName` property and `NewIcon` signal, surfaced as `GetTrayIconNameAsync` and `TrayIconChanged` (`WatchTrayIconAsync`) |
 
 Context methods used: `SetCapability(t)`, `FocusIn()`, `FocusOut()`,
 `ProcessKeyEvent(uuubu) → b` (keysym, keycode, state, isRelease, time),
@@ -63,6 +64,23 @@ returns.
 - **`CurrentIM` follows `FocusIn`.** With `GetIMInfoOnFocus` (in
   `ClientDrawsComposition`) fcitx5 emits `CurrentIM` after every `FocusIn`, so
   a client learns the context's input method without calling the controller.
+- **Mozc's mode is not on the Input Context.** `CurrentIM` only follows
+  input-method switches and `FocusIn`, and `Controller1.CurrentInputMethodInfo`
+  carries the entry's fixed label (`あ`). What follows the mode is fcitx5's
+  tray icon: `IconName` is `fcitx_mozc_direct`, `fcitx_mozc_hiragana`, …
+  (fcitx5-mozc's `kPropCompositionModes`), with a `NewIcon` on every change
+  and on every `FocusIn`. It describes the context fcitx5 last focused, which
+  `ProcessKeyEvent` makes the caller's again. It exists only when the desktop
+  has a tray, and it is empty when classicui's `PreferTextIcon` is set. The
+  item is registered from a private connection of fcitx5's, not from
+  `org.fcitx.Fcitx5`'s owner. Verified 2026-10-04 against fcitx5 5.1.23 +
+  fcitx5-mozc 3.34 by
+  `The_tray_icon_names_mozcs_mode_for_the_focused_context`.
+- **fcitx5's input-method popup arrives as aux text.** On a switch, or on a
+  Mozc mode change with nothing composed, `UpdateClientSideUI` carries
+  fcitx5's popup (`あ (Direct)`) as `auxUp` with no preedit or candidates,
+  and clears it a second later. The text is localized and shaped by the
+  global config, so it is no source for the mode.
 - **`FocusOut` commits.** Mozc commits the pending composition on focus loss
   whether or not `ClientUnfocusCommit` is set. Call `Reset()` first to discard
   it instead.

@@ -8,6 +8,9 @@ internal sealed class FcitxContextFactory : IInputContextFactory
 {
     private const string Program = "ffxiv-ime-bridge";
 
+    /// <summary>How long one read of the tray icon may take: the tray's items are other programs, and one that never answers must not keep a read pending.</summary>
+    private static readonly TimeSpan TrayIconTimeout = TimeSpan.FromSeconds(1);
+
     private readonly FcitxConnection connection;
     private readonly IPluginLog log;
 
@@ -17,10 +20,27 @@ internal sealed class FcitxContextFactory : IInputContextFactory
         this.log = log;
         connection.FcitxAvailabilityChanged += available => AvailabilityChanged?.Invoke(available);
         connection.Disconnected += reason => ConnectionLost?.Invoke(reason.Message);
+        connection.TrayIconChanged += () => TrayIconChanged?.Invoke();
     }
 
     public event Action<bool>? AvailabilityChanged;
     public event Action<string>? ConnectionLost;
+    public event Action? TrayIconChanged;
+
+    public async Task<string?> GetTrayIconNameAsync(CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TrayIconTimeout);
+        try
+        {
+            return await connection.GetTrayIconNameAsync(timeout.Token).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            log.Warning("Session: reading fcitx5's tray icon failed: {Error}", ex.Message);
+            return null;
+        }
+    }
 
     public async Task<IInputContextClient> CreateContextAsync(CancellationToken cancellationToken)
     {

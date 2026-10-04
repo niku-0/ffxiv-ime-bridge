@@ -60,6 +60,7 @@ internal sealed class ForwardingSession : IAsyncDisposable
     private bool forwarding;
     private bool chatBoxFocused;
     private int consecutiveTimeouts;
+    private int trayIconReads;
 
     private ForwardingSession(IInputContextFactory factory, IInputContextClient context, Action<string> chatLine, Action<string> log, TimeSpan askTimeout)
     {
@@ -69,6 +70,7 @@ internal sealed class ForwardingSession : IAsyncDisposable
         this.askTimeout = askTimeout;
         factory.AvailabilityChanged += available => queue.Post(() => OnAvailabilityChanged(available));
         factory.ConnectionLost += reason => queue.Post(() => OnConnectionLost(reason));
+        factory.TrayIconChanged += () => queue.Post(ReadTrayIcon);
         Attach(context);
     }
 
@@ -117,6 +119,16 @@ internal sealed class ForwardingSession : IAsyncDisposable
     public InputMethodInfo? CurrentInputMethod { get; private set; }
 
     /// <summary>
+    /// fcitx5's tray icon as last read while the Chat Box had focus, so while
+    /// fcitx5 had this context focused: for Mozc, its mode
+    /// (<c>fcitx_mozc_direct</c> …). Null until read, without a tray icon, and
+    /// on a new context. Another program taking fcitx5's focus while the Chat
+    /// Box keeps the game's lends it that program's icon until the next key,
+    /// which fcitx5 focuses this context again for.
+    /// </summary>
+    public string? TrayIcon { get; private set; }
+
+    /// <summary>
     /// The context's state as last taken on the game thread — after each waited
     /// key reply and on each tick — for rendering. The context's own
     /// <c>State</c> (<see cref="IsComposing"/>) is always the freshest; this one only moves on the game thread.
@@ -132,8 +144,8 @@ internal sealed class ForwardingSession : IAsyncDisposable
     /// <summary>Chat Box focus as last observed, for the Indicator.</summary>
     public bool ChatBoxFocused => chatBoxFocused;
 
-    /// <summary>What the Indicator shows: Degraded, else the context's input method; null until fcitx5 has named one.</summary>
-    public IndicatorGlyph? IndicatorGlyph => Degraded ? Session.IndicatorGlyph.Degraded : CurrentInputMethod is { } im ? Session.IndicatorGlyph.For(im) : null;
+    /// <summary>What the Indicator shows: Degraded, else the context's input method and Mozc's mode; null until fcitx5 has named an input method.</summary>
+    public IndicatorGlyph? IndicatorGlyph => Degraded ? Session.IndicatorGlyph.Degraded : CurrentInputMethod is { } im ? Session.IndicatorGlyph.For(im, TrayIcon) : null;
 
     /// <summary>The next committed text, in the order fcitx5 sent it. Drained on the game thread: from the hook after a waited reply, and from the tick.</summary>
     public bool TryTakeCommit(out string text) => commits.TryDequeue(out text!);
@@ -236,7 +248,26 @@ internal sealed class ForwardingSession : IAsyncDisposable
                 log("forwarding degraded lifted on focus gain");
                 break;
         }
+        FocusIn();
+    }
+
+    private void FocusIn()
+    {
         context?.FocusIn();
+        ReadTrayIcon();
+    }
+
+    /// <summary>Asks for the tray icon; the answer is kept if the Chat Box still has focus and no later read has started.</summary>
+    private void ReadTrayIcon()
+    {
+        if (!chatBoxFocused || NothingToTell) return;
+        var read = ++trayIconReads;
+        factory.GetTrayIconNameAsync(disposal.Token).ContinueWith(
+            t => queue.Post(() =>
+            {
+                if (read == trayIconReads && chatBoxFocused) TrayIcon = t.Result;
+            }),
+            CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     private void OnFocusLost()
@@ -283,13 +314,14 @@ internal sealed class ForwardingSession : IAsyncDisposable
         degraded = null;
         log("input context recreated; forwarding degraded lifted");
         if (old is not null) Forget(old.DisposeAsync());
-        if (chatBoxFocused) context!.FocusIn();
+        if (chatBoxFocused) FocusIn();
     }
 
     private void Attach(IInputContextClient next)
     {
         context = next;
         CurrentInputMethod = null;
+        TrayIcon = null;
         onInputMethodChanged = info => queue.Post(() => CurrentInputMethod = info);
         onCommitted = commits.Enqueue;
         next.InputMethodChanged += onInputMethodChanged;

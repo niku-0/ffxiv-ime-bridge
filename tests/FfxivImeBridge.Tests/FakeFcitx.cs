@@ -85,6 +85,23 @@ internal sealed class FakeFcitx : IInputContextFactory
 
     public event Action<bool>? AvailabilityChanged;
     public event Action<string>? ConnectionLost;
+    public event Action? TrayIconChanged;
+
+    /// <summary>What <see cref="GetTrayIconNameAsync"/> answers when nothing is scripted.</summary>
+    public string? TrayIcon { get; set; }
+
+    /// <summary>Scripted answers, consumed one per <see cref="GetTrayIconNameAsync"/> before <see cref="TrayIcon"/> applies; an incomplete task is a read still under way.</summary>
+    public Queue<Task<string?>> TrayIconReplies { get; } = new();
+
+    public Task<string?> GetTrayIconNameAsync(CancellationToken cancellationToken) =>
+        TrayIconReplies.TryDequeue(out var reply) ? reply : Task.FromResult(TrayIcon);
+
+    /// <summary>fcitx5's tray item says <c>NewIcon</c>, now showing <paramref name="icon"/>.</summary>
+    public void ChangeTrayIcon(string? icon)
+    {
+        TrayIcon = icon;
+        TrayIconChanged?.Invoke();
+    }
 
     public Task<IInputContextClient> CreateContextAsync(CancellationToken cancellationToken)
     {

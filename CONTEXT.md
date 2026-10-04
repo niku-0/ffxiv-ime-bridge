@@ -82,8 +82,9 @@ _Avoid_: hotkey, keybind, shortcut
 **Indicator**:
 The single-glyph badge drawn where the game's own input-mode badge sits —
 left of the channel name at the Chat Box's edge — while Forwarding is on,
-showing fcitx5's current input method (`あ` for Mozc, `A` for direct). Can be
-hidden for a vanilla look.
+showing the Input Context's input method and, for Mozc, its mode as fcitx5's
+tray icon names it: `あ` for Mozc in hiragana, `A` for Mozc's direct input or
+a keyboard layout. Can be hidden for a vanilla look.
 _Avoid_: status icon, mode label, overlay
 
 **Slash Bypass**:

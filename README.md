@@ -95,12 +95,17 @@ without toggling off. A `/` in the middle of text is ordinary text.
 
 | Glyph | Meaning |
 | --- | --- |
-| `あ` | Mozc: your typing is composed as Japanese. |
-| `A` | Your keyboard layout: letters go into the chat box as typed. |
+| `あ` | Mozc in hiragana: your typing is composed as Japanese. |
+| `A` | Your keyboard layout, or Mozc on direct input: letters go into the chat box as typed. |
 | `!` | Degraded: fcitx5 is gone or not answering, so keys go to the game untouched. See below. |
 
-Any other fcitx5 input method shows its initial. The settings window can hide
-the Indicator, or draw it as the Windows client's badge instead.
+Mozc's katakana shows `ア` (`ｱ` half-width), its half- and full-width
+alphanumeric modes `半` and `全`, and any other fcitx5 input method shows its
+initial. The key left of `1` pressed on its own is Mozc's Hankaku/Zenkaku: it
+flips Mozc between hiragana and direct input. Mozc's mode is read from
+fcitx5's tray icon, so on a desktop without a tray the Indicator shows `あ` for
+Mozc in every mode. The settings window can hide the Indicator, or draw it as
+the Windows client's badge instead.
 
 ## Troubleshooting
 

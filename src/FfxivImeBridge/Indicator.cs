@@ -10,8 +10,8 @@ namespace FfxivImeBridge;
 
 /// <summary>
 /// The single glyph where the game's own input-mode badge sits, while the Chat
-/// Box is focused and Forwarding is on: the context's input method, or <c>!</c>
-/// while Degraded. The channel label (<c>Say</c>) begins with a full-width space
+/// Box is focused and Forwarding is on: the context's input method and Mozc's
+/// mode, or <c>!</c> while Degraded. The channel label (<c>Say</c>) begins with a full-width space
 /// and a space that the game reserves for its badge — no node of the ChatLog
 /// draws there, by the node dump in
 /// <c>.scratch/ffxiv-ime-bridge/issues/14-axis-font-and-vanilla-indicator.md</c>

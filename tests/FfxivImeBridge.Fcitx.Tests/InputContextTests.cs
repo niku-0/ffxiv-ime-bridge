@@ -16,6 +16,8 @@ public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
     private const uint EscKey = 1 + 8;
     private const uint EnterKey = 28 + 8;
     private const uint SpaceKey = 57 + 8;
+    /// <summary>The key left of 1 (scancode 0x29), which Mozc's <c>jp</c> layout reads as Hankaku/Zenkaku whatever keysym comes with it.</summary>
+    private const uint HankakuZenkakuKey = 41 + 8;
     private FcitxConnection connection = null!;
 
     public async Task InitializeAsync() => connection = await FcitxConnection.ConnectAsync(cancellationToken: Cts().Token);
@@ -187,6 +189,43 @@ public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
         Assert.False(context.State.IsComposing);
     }
 
+    [FcitxTrayFact]
+    public async Task The_tray_icon_names_mozcs_mode_for_the_focused_context()
+    {
+        await using var session = await MozcSession.OpenAsync(connection);
+        var context = session.Context;
+        var changes = 0;
+        connection.TrayIconChanged += () => Interlocked.Increment(ref changes);
+        await connection.WatchTrayIconAsync(Cts().Token);
+        await WaitForTrayIcon("fcitx_mozc_hiragana");
+
+        // Hankaku/Zenkaku is consumed with nothing composed, and Mozc is on direct input: it declines letters.
+        Assert.True(await Tap(context, KeyEvent.Press(KeySym.FromChar('`'), HankakuZenkakuKey)));
+        Assert.False(context.State.IsComposing);
+        await WaitForTrayIcon("fcitx_mozc_direct");
+        await WaitFor(() => Volatile.Read(ref changes) > 0 ? context : null);
+        Assert.False(await Tap(context, KeyEvent.Char('k')));
+
+        // Pressed again, it is back to hiragana.
+        Assert.True(await Tap(context, KeyEvent.Press(KeySym.FromChar('`'), HankakuZenkakuKey)));
+        await WaitForTrayIcon("fcitx_mozc_hiragana");
+        Assert.True(await Tap(context, KeyEvent.Char('k')));
+        await Tap(context, KeyEvent.Press(KeySym.Escape, EscKey));
+    }
+
+    private async Task WaitForTrayIcon(string icon)
+    {
+        string? last = null;
+        try
+        {
+            await WaitFor(async () => (last = await connection.GetTrayIconNameAsync(Cts().Token)) == icon ? last : null);
+        }
+        catch (OperationCanceledException)
+        {
+            Assert.Fail($"tray icon stayed '{last}', expected '{icon}'");
+        }
+    }
+
     /// <summary>Press and release, returning whether the press was handled.</summary>
     private static async Task<bool> Tap(InputContext context, KeyEvent press)
     {
@@ -195,12 +234,14 @@ public sealed class InputContextTests(ITestOutputHelper output) : IAsyncLifetime
         return handled;
     }
 
-    private static async Task<T> WaitFor<T>(Func<T?> probe) where T : class
+    private static Task<T> WaitFor<T>(Func<T?> probe) where T : class => WaitFor(() => Task.FromResult(probe()));
+
+    private static async Task<T> WaitFor<T>(Func<Task<T?>> probe) where T : class
     {
         using var cts = Cts();
         while (true)
         {
-            if (probe() is { } value) return value;
+            if (await probe() is { } value) return value;
             cts.Token.ThrowIfCancellationRequested();
             await Task.Delay(10, cts.Token);
         }

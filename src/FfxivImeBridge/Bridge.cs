@@ -110,7 +110,7 @@ internal sealed class Bridge : IDisposable
     }
 }
 
-/// <summary>The load-time steps as one <see cref="ISessionSource"/>: the ladder on its throwaway connection, then a live connection, its availability watch and the session.</summary>
+/// <summary>The load-time steps as one <see cref="ISessionSource"/>: the ladder on its throwaway connection, then a live connection, its availability and tray icon watches and the session.</summary>
 internal sealed class LadderSessionSource(ProbeRunner probe, IChatGui chat, IPluginLog log) : ISessionSource
 {
     public async Task<OpenedSession?> OpenAsync(bool silent, bool forwarding, CancellationToken cancellationToken)
@@ -122,6 +122,7 @@ internal sealed class LadderSessionSource(ProbeRunner probe, IChatGui chat, IPlu
         try
         {
             await live.WatchAvailabilityAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            await live.WatchTrayIconAsync(cancellationToken).ConfigureAwait(false);
             var session = await ForwardingSession.OpenAsync(new FcitxContextFactory(live, log), line => chat.Print(line), line => log.Information("Session: {Line}", line), forwarding, cancellationToken).ConfigureAwait(false);
             return new OpenedSession(session, live);
         }

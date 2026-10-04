@@ -52,7 +52,7 @@ internal interface IInputContextClient : IAsyncDisposable
     void Abandon();
 }
 
-/// <summary>Where Input Contexts come from, and whether fcitx5 is on the bus to serve them.</summary>
+/// <summary>Where Input Contexts come from, whether fcitx5 is on the bus to serve them, and fcitx5's tray icon.</summary>
 internal interface IInputContextFactory
 {
     /// <summary>fcitx5 appeared on (<see langword="true"/>) or left (<see langword="false"/>) the bus. Reader thread.</summary>
@@ -60,6 +60,17 @@ internal interface IInputContextFactory
 
     /// <summary>The connection under the contexts died, with the reason; nothing on it can be recreated. Reader thread.</summary>
     event Action<string>? ConnectionLost;
+
+    /// <summary>fcitx5's tray icon may have changed. Reader thread.</summary>
+    event Action? TrayIconChanged;
+
+    /// <summary>
+    /// fcitx5's tray icon (<see cref="FcitxConnection.GetTrayIconNameAsync"/>):
+    /// its focused context's input method and, for Mozc, its mode. Null when
+    /// there is none to read; a failed read is the implementation's to log, and
+    /// is null too.
+    /// </summary>
+    Task<string?> GetTrayIconNameAsync(CancellationToken cancellationToken);
 
     /// <summary>A fresh context with <see cref="CapabilityFlags.ClientDrawsComposition"/>, starting on fcitx5's default input method.</summary>
     Task<IInputContextClient> CreateContextAsync(CancellationToken cancellationToken);

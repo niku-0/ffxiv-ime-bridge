@@ -15,4 +15,13 @@ public static class Fcitx5Names
 
     public const string ControllerPath = "/controller";
     public const string ControllerInterface = "org.fcitx.Fcitx.Controller1";
+
+    // The desktop's tray, where fcitx5's notificationitem addon registers its icon.
+    public const string StatusNotifierWatcherName = "org.kde.StatusNotifierWatcher";
+    public const string StatusNotifierWatcherPath = "/StatusNotifierWatcher";
+    public const string StatusNotifierItemInterface = "org.kde.StatusNotifierItem";
+    public const string StatusNotifierItemDefaultPath = "/StatusNotifierItem";
+
+    /// <summary>The <c>Id</c> of fcitx5's own tray item, among every application's.</summary>
+    public const string TrayItemId = "Fcitx";
 }

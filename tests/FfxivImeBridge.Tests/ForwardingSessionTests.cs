@@ -259,6 +259,118 @@ public sealed class ForwardingSessionTests
         Assert.Equal(hiragana, session.IndicatorGlyph?.State == IndicatorState.Hiragana);
     }
 
+    [Theory]
+    [InlineData("fcitx_mozc_hiragana", "あ", true)]
+    [InlineData("fcitx_mozc_direct", "A", false)]
+    [InlineData("fcitx_mozc_katakana_full", "ア", false)]
+    [InlineData("fcitx_mozc_alpha_half", "半", false)]
+    [InlineData("fcitx_mozc_alpha_full", "全", false)]
+    [InlineData("fcitx_mozc_katakana_half", "ｱ", false)]
+    [InlineData(null, "あ", true)] // no tray icon to read
+    [InlineData("input-keyboard", "あ", true)] // not Mozc's: another program's, lent for a moment
+    public void Mozcs_glyph_follows_its_mode_by_the_tray_icon(string? trayIcon, string text, bool hiragana)
+    {
+        var state = hiragana ? IndicatorState.Hiragana : IndicatorState.Letter;
+        session.Forwarding = true;
+        session.ObserveFocus(chatBoxFocused: true);
+        Context.RaiseInputMethod("mozc");
+        fcitx.ChangeTrayIcon(trayIcon);
+        session.Tick();
+        Assert.Equal(new IndicatorGlyph(state, text), session.IndicatorGlyph);
+    }
+
+    [Fact]
+    public void Hankaku_zenkaku_there_and_back_turns_the_glyph_to_A_and_back_to_hiragana()
+    {
+        session.Forwarding = true;
+        session.ObserveFocus(chatBoxFocused: true);
+        Context.RaiseInputMethod("mozc");
+        fcitx.ChangeTrayIcon("fcitx_mozc_hiragana");
+        session.Tick();
+        Assert.Equal("あ", session.IndicatorGlyph?.Text);
+
+        fcitx.ChangeTrayIcon("fcitx_mozc_direct");
+        session.Tick();
+        Assert.Equal("A", session.IndicatorGlyph?.Text);
+
+        fcitx.ChangeTrayIcon("fcitx_mozc_hiragana");
+        session.Tick();
+        Assert.Equal("あ", session.IndicatorGlyph?.Text);
+    }
+
+    [Fact]
+    public void A_keyboard_layout_stays_A_whatever_the_tray_icon_says()
+    {
+        session.ObserveFocus(chatBoxFocused: true);
+        Context.RaiseInputMethod("keyboard-us");
+        fcitx.ChangeTrayIcon("fcitx_mozc_hiragana");
+        session.Tick();
+        Assert.Equal(new IndicatorGlyph(IndicatorState.Letter, "A"), session.IndicatorGlyph);
+    }
+
+    [Fact]
+    public void The_tray_icon_is_read_on_focus_gain()
+    {
+        fcitx.TrayIcon = "fcitx_mozc_direct";
+        session.ObserveFocus(chatBoxFocused: true);
+        session.Tick();
+        Assert.Equal("fcitx_mozc_direct", session.TrayIcon);
+    }
+
+    [Fact]
+    public void A_tray_icon_change_while_the_chat_box_is_unfocused_belongs_to_another_program_and_is_not_read()
+    {
+        session.ObserveFocus(chatBoxFocused: true);
+        fcitx.ChangeTrayIcon("fcitx_mozc_direct");
+        session.Tick();
+        session.ObserveFocus(chatBoxFocused: false);
+
+        fcitx.ChangeTrayIcon("fcitx_mozc_hiragana");
+        session.Tick();
+        Assert.Equal("fcitx_mozc_direct", session.TrayIcon);
+    }
+
+    [Fact]
+    public void A_read_answered_after_focus_loss_is_dropped()
+    {
+        var pending = new TaskCompletionSource<string?>();
+        fcitx.TrayIconReplies.Enqueue(pending.Task);
+        session.ObserveFocus(chatBoxFocused: true);
+        session.ObserveFocus(chatBoxFocused: false);
+
+        pending.SetResult("fcitx_mozc_direct");
+        session.Tick();
+        Assert.Null(session.TrayIcon);
+    }
+
+    [Fact]
+    public void A_slow_read_does_not_overwrite_a_later_one()
+    {
+        var slow = new TaskCompletionSource<string?>();
+        fcitx.TrayIconReplies.Enqueue(slow.Task);
+        session.ObserveFocus(chatBoxFocused: true); // the focus gain's read, still under way
+        fcitx.ChangeTrayIcon("fcitx_mozc_hiragana"); // a later read, answered at once
+        session.Tick();
+
+        slow.SetResult("fcitx_mozc_direct");
+        session.Tick();
+        Assert.Equal("fcitx_mozc_hiragana", session.TrayIcon);
+    }
+
+    [Fact]
+    public void Nothing_reads_the_tray_icon_while_fcitx5_is_off_the_bus()
+    {
+        session.ObserveFocus(chatBoxFocused: true);
+        session.Tick();
+        fcitx.Leave();
+        session.Tick();
+        fcitx.TrayIconReplies.Enqueue(Task.FromResult<string?>("fcitx_mozc_direct"));
+
+        fcitx.ChangeTrayIcon("fcitx_mozc_direct");
+        session.Tick();
+        Assert.Single(fcitx.TrayIconReplies); // not asked
+    }
+
     [Fact]
     public void The_indicator_has_no_glyph_before_fcitx5_has_named_an_input_method()
     {
