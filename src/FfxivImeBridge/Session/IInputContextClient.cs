@@ -38,7 +38,7 @@ internal interface IInputContextClient : IAsyncDisposable
     /// <summary>A key fcitx5 is told about but not asked about: modifier presses, and the release of every press it was told about.</summary>
     void SendKey(KeyEvent key);
 
-    /// <summary>Mouse selection (ticket 16): the candidate at <paramref name="index"/> on the current page, as fcitx5's own panel would.</summary>
+    /// <summary>Mouse selection (ADR-0003): the candidate at <paramref name="index"/> on the current page, as fcitx5's own panel would.</summary>
     void SelectCandidate(int index);
     void NextPage();
     void PreviousPage();
@@ -47,7 +47,7 @@ internal interface IInputContextClient : IAsyncDisposable
     /// Let the context go without telling fcitx5, for when fcitx5 or the
     /// connection is gone: <see cref="IAsyncDisposable.DisposeAsync"/>'s
     /// <c>DestroyIC</c> would be a method call to an unowned bus name, which
-    /// the bus would answer by starting fcitx5 again (ticket 18).
+    /// the bus would answer by starting fcitx5 again.
     /// </summary>
     void Abandon();
 }

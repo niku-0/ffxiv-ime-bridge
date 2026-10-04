@@ -10,7 +10,7 @@ using FfxivImeBridge.Rendering;
 
 namespace FfxivImeBridge;
 
-/// <summary>The <c>/imebridge debug</c> window: the transport ladder (M0.2), the keyboard Gate (M0.3, M1.3) with the composition snapshot (M1.4), and the Chat Box with the last Native Write (M0.4, M1.5) and the Preedit's placement (M2.5).</summary>
+/// <summary>The <c>/imebridge debug</c> window: the Transport Ladder, the keyboard Gate with the composition snapshot, and the Chat Box with the last Native Write and the Preedit's placement.</summary>
 internal sealed class DebugWindow : Window
 {
     private static readonly Vector4 Passed = new(0.55f, 0.9f, 0.55f, 1f);
@@ -20,7 +20,7 @@ internal sealed class DebugWindow : Window
 
     private readonly ProbeRunner probe;
     private readonly Bridge bridge;
-    /// <summary>Null on Windows proper, where nothing is hooked (ticket 19); the Keyboard tab then says so and the Transport tab carries the answer.</summary>
+    /// <summary>Null on Windows proper, where nothing is hooked; the Keyboard tab then says so and the Transport tab carries the answer.</summary>
     private readonly KeyboardCapture? capture;
     private readonly NativeWriter writer;
     private readonly CompositionOverlay overlay;
@@ -187,7 +187,7 @@ internal sealed class DebugWindow : Window
         }
     }
 
-    /// <summary>Where the overlay put the Preedit this frame against the text and cursor nodes (ticket 15), so a remaining offset can be read off.</summary>
+    /// <summary>Where the overlay put the Preedit this frame against the text and cursor nodes, so a remaining offset can be read off.</summary>
     private string PreeditPlacementText() =>
         "preedit: " + (overlay.LastPreedit?.ToString() ?? "not drawn (compose in the Chat Box to place it)");
 

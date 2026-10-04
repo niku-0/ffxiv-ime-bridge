@@ -11,9 +11,8 @@ namespace FfxivImeBridge.Rendering;
 /// it — on the ImGui foreground list: no window, no focus, local player only.
 /// The game's AXIS face through <see cref="OverlayFont"/>, at the Chat Box
 /// text's own size (or the config override); the Preedit in the game's IME
-/// colour when that reads (ticket 14), its baseline on the Chat Box text's
-/// (ticket 15). Main thread (Draw). Reads the cursor and text nodes; writes
-/// nothing.
+/// colour when that reads, its baseline on the Chat Box text's. Main thread
+/// (Draw). Reads the cursor and text nodes; writes nothing.
 /// </summary>
 internal sealed class CompositionOverlay(Bridge bridge, IGameGui gui, OverlayFont font)
 {
@@ -22,7 +21,7 @@ internal sealed class CompositionOverlay(Bridge bridge, IGameGui gui, OverlayFon
     private static readonly Vector4 Ink = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 Muted = new(0.7f, 0.7f, 0.72f, 1f);
 
-    /// <summary>What the last frame drew, for the <see cref="Capture.MouseGate"/> to hit-test (ticket 16); null while nothing is drawn.</summary>
+    /// <summary>What the last frame drew, for the <see cref="Capture.MouseGate"/> to hit-test; null while nothing is drawn.</summary>
     public CompositionPlan? LastPlan { get; private set; }
 
     /// <summary>Where the last frame put the Preedit against the Chat Box's nodes, for the debug tab; null while nothing is drawn.</summary>

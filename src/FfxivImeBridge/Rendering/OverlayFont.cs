@@ -9,14 +9,14 @@ using FfxivImeBridge.NativeWrite;
 namespace FfxivImeBridge.Rendering;
 
 /// <summary>
-/// The AXIS handles the overlay draws with (ticket 14), on an atlas of the
-/// plugin's own that Dalamud's global scale leaves alone, so a requested pixel
-/// size is the size on screen: one for the Preedit and the candidates at the
-/// Chat Box text's size, one for the Indicator at the channel label's. A new
-/// size builds a second handle asynchronously while the current one keeps
-/// drawing, scaled by ImGui to the wanted size; the new one takes over once it
-/// is available. Only a slot's very first build has nothing to fall back on
-/// but the font ImGui has current. Main thread (Draw).
+/// The AXIS handles the overlay draws with, on an atlas of the plugin's own
+/// that Dalamud's global scale leaves alone, so a requested pixel size is the
+/// size on screen: one for the Preedit and the candidates at the Chat Box
+/// text's size, one for the Indicator at the channel label's. A new size builds
+/// a second handle asynchronously while the current one keeps drawing, scaled
+/// by ImGui to the wanted size; the new one takes over once it is available.
+/// Only a slot's very first build has nothing to fall back on but the font
+/// ImGui has current. Main thread (Draw).
 /// </summary>
 internal sealed class OverlayFont : IDisposable
 {
@@ -119,7 +119,7 @@ internal readonly struct PushedFont(IDisposable pop, ImFontPtr font, float sizeP
     /// The baseline below the top of a line drawn at <paramref name="atPx"/>: the
     /// font's ascent scaled from its built size. For an AXIS handle this is the
     /// fdt's own ascent, so at the Chat Box text's size it is where the game
-    /// draws that text's baseline (ticket 15).
+    /// draws that text's baseline.
     /// </summary>
     public float AscentAt(float atPx) => font.Ascent * atPx / font.FontSize;
 

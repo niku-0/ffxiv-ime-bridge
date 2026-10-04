@@ -35,15 +35,15 @@ internal sealed record WriteReport(DateTime At, string Text, WriteOutcome Outcom
 
     /// <summary>
     /// The committed text as it went in: what fcitx5 sent, minus the control
-    /// characters the plan dropped (ticket 19). <see cref="Text"/> is what
-    /// arrived, and the two differ only when <c>Plan.ControlsDropped</c> is set.
+    /// characters the plan dropped. <see cref="Text"/> is what arrived, and the
+    /// two differ only when <c>Plan.ControlsDropped</c> is set.
     /// </summary>
     public string Committed => Plan?.Committed ?? Text;
 
     /// <summary>
     /// What the log gets at Information: the outcome and the counts, without a
     /// character of what the user typed. <c>dalamud.log</c> is a file users
-    /// upload to support channels (ticket 18).
+    /// upload to support channels.
     /// </summary>
     public string Summary
     {
@@ -69,20 +69,19 @@ internal sealed record WriteReport(DateTime At, string Text, WriteOutcome Outcom
 /// leaves the Cursor after it — read text and cursor, plan the splice, let the
 /// game's own <c>InsertText</c> do it at its cursor with the cursor index already
 /// written after the text, tell the component the selection moved so it draws
-/// the cursor there. Ticket 04 proved the cursor write holds; the game's splice,
-/// not <c>SetText</c>, is used because only it refreshes the input module's copy
-/// of the text — the before/after split its keystrokes edit at, which the game
-/// also hands back to the component on focus loss (a <c>SetText</c> write
-/// vanished on clicking out of the box) — and the splice rebuilds that split
-/// from the cursor index, so the index is written before it; the drawn cursor
-/// follows only the module's own <c>UpdateTextSelection</c> notice (ticket 20).
-/// Overflow is
-/// refused before anything is written, never truncated. Focus is not required: a Commit that
-/// lands after the Chat Box lost focus is still the user's text and is written
-/// if the box exists; only a missing box loses it, to the log. Nothing is ever
-/// sent (ADR-0001). Main thread only: called from the message hook right after
-/// the waited reply that produced the Commit, and from the framework tick for
-/// one that arrived out of band.
+/// the cursor there. The game's splice, not <c>SetText</c>, is used because
+/// only it refreshes the input module's copy of the text — the before/after
+/// split its keystrokes edit at, which the game also hands back to the
+/// component on focus loss (a <c>SetText</c> write would vanish on clicking out
+/// of the box) — and the splice rebuilds that split from the cursor index, so
+/// the index is written before it; the drawn cursor follows only the module's
+/// own <c>UpdateTextSelection</c> notice. Overflow is refused before anything
+/// is written, never truncated. Focus is not required: a Commit that lands
+/// after the Chat Box lost focus is still the user's text and is written if the
+/// box exists; only a missing box loses it, to the log. Nothing is ever sent
+/// (ADR-0001). Main thread only: called from the message hook right after the
+/// waited reply that produced the Commit, and from the framework tick for one
+/// that arrived out of band.
 /// </summary>
 internal sealed class NativeWriter
 {
@@ -153,7 +152,7 @@ internal sealed class NativeWriter
         {
             // The game's splice lands at the module's before/after split, which is
             // where its next keystroke goes too, and rebuilds that split from
-            // CursorPos once done (ticket 20) — so the cursor goes in first, so that
+            // CursorPos once done — so the cursor goes in first, so that
             // the rebuilt split is after the text; the cursor write alone moves the
             // index and leaves the split, and the drawn cursor, where the splice began.
             ChatBoxAccess.SetCursor(input, expected);
@@ -167,7 +166,7 @@ internal sealed class NativeWriter
     private void Publish(WriteReport report)
     {
         LastReport = report;
-        // The user's draft never reaches the log above Debug (ticket 18): the
+        // The user's draft never reaches the log above Debug: the
         // lines on by default carry outcomes and counts, the text-bearing ones
         // only appear once the log level is lowered.
         switch (report.Outcome)

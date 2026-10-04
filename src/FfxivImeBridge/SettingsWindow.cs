@@ -6,7 +6,7 @@ using FfxivImeBridge.Capture;
 namespace FfxivImeBridge;
 
 /// <summary>
-/// The settings window (ticket 12): the cog on Dalamud's plugin page, bare
+/// The settings window: the cog on Dalamud's plugin page, bare
 /// <c>/imebridge</c> and <c>/imebridge config</c>. Every control writes the
 /// <see cref="Configuration"/> and saves at once; Forwarding goes through the
 /// <see cref="Bridge"/> like the chord and the command do. On Windows proper
@@ -26,7 +26,7 @@ internal sealed class SettingsWindow : Window
     private readonly KeyboardCapture? capture;
     private readonly ConfigStore config;
 
-    /// <param name="capture">The message-pump hook, or null on Windows proper where nothing is hooked (ticket 19): the window then has nothing to set.</param>
+    /// <param name="capture">The message-pump hook, or null on Windows proper where nothing is hooked: the window then has nothing to set.</param>
     public SettingsWindow(Bridge bridge, KeyboardCapture? capture, ConfigStore config) : base(Strings.SettingsTitle + "###FfxivImeBridgeSettings")
     {
         this.bridge = bridge;

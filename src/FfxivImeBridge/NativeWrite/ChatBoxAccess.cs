@@ -8,9 +8,10 @@ namespace FfxivImeBridge.NativeWrite;
 
 /// <summary>
 /// Reads and writes the ChatLog addon's text input through FFXIVClientStructs.
-/// Main thread only. Every field touched is listed in ticket 04's answer, which
-/// is also where what each means was settled: the cursor is in code points and
-/// live on both the component and the input module.
+/// Main thread only. The cursor is in code points and live on both the
+/// component and the input module; what each field touched means was measured
+/// in-game
+/// (<c>.scratch/ffxiv-ime-bridge/issues/04-native-buffer-settext-cursor.md</c>).
 /// </summary>
 internal static unsafe class ChatBoxAccess
 {
@@ -38,8 +39,8 @@ internal static unsafe class ChatBoxAccess
     /// <summary>
     /// The channel label (<c>Say</c>, <c>Party</c>, …) at the top-left of the
     /// input frame, whose leading gap the game's own input-mode badge occupies:
-    /// the Indicator takes its vertical place, size and colours (ticket 14). Null
-    /// while the addon is not loaded or the node is missing.
+    /// the Indicator takes its vertical place, size and colours. Null while the
+    /// addon is not loaded or the node is missing.
     /// </summary>
     public static ChannelLabel? ChannelLabel(IGameGui gui)
     {
@@ -49,7 +50,7 @@ internal static unsafe class ChatBoxAccess
         return new ChannelLabel(Box(&text->AtkResNode)!.Value, text->FontSize, AccumulatedScaleY(&text->AtkResNode), text->TextColor.RGBA, text->EdgeColor.RGBA);
     }
 
-    /// <summary>The text input's font and IME colours (ticket 14), or null while the addon is not loaded.</summary>
+    /// <summary>The text input's font and IME colours, or null while the addon is not loaded.</summary>
     public static ChatBoxStyle? Style(IGameGui gui)
     {
         var input = Find(gui);
@@ -70,12 +71,12 @@ internal static unsafe class ChatBoxAccess
     }
 
     /// <summary>
-    /// The Cursor on screen, for the Preedit: the input's own cursor node (exact,
-    /// follows horizontal scrolling — ticket 04), else the text node's left edge plus
-    /// the drawn width of the text before the cursor (drifts once the text
+    /// The Cursor on screen, for the Preedit: the input's own cursor node
+    /// (exact, follows horizontal scrolling), else the text node's left edge
+    /// plus the drawn width of the text before the cursor (drifts once the text
     /// scrolls). The text line's top is the text node's, which the Preedit's
-    /// baseline follows (ticket 15); the cursor node's when there is no text
-    /// node. Null while the addon is not loaded or neither node exists.
+    /// baseline follows; the cursor node's when there is no text node. Null
+    /// while the addon is not loaded or neither node exists.
     /// </summary>
     public static CursorAnchor? CursorAnchor(IGameGui gui)
     {
@@ -99,7 +100,7 @@ internal static unsafe class ChatBoxAccess
         return new CursorAnchor(node->ScreenX + MeasureWidth(text, raw[..offset]), node->ScreenY, node->Height * textScale, textScale, node->ScreenY);
     }
 
-    /// <summary>The live cursor index in code points (ticket 04): the module's while the Chat Box is its target, else the component's.</summary>
+    /// <summary>The live cursor index in code points: the module's while the Chat Box is its target, else the component's.</summary>
     private static int CursorIndexOf(AtkComponentTextInput* input)
     {
         var module = Module();
@@ -195,14 +196,14 @@ internal static unsafe class ChatBoxAccess
     /// Unlike <see cref="SetText"/> it refreshes the input module's copy of the
     /// text (<c>RawInputString</c> and the split around the selection), which is
     /// what the game hands back to the component when the Chat Box loses focus;
-    /// it leaves the cursor where it was (ticket 04).
+    /// it leaves the cursor where it was.
     /// </summary>
     public static void InsertText(AtkComponentTextInput* input, string text) => input->InsertText(text, unique: false);
 
     /// <summary>
     /// Replaces the whole text on the component only. The module's copy is not
-    /// refreshed (ticket 04), so this is for a Chat Box whose cursor cannot be
-    /// trusted, where the game's own splice would land who knows where.
+    /// refreshed, so this is for a Chat Box whose cursor cannot be trusted,
+    /// where the game's own splice would land who knows where.
     /// </summary>
     public static void SetText(AtkComponentTextInput* input, ReadOnlySpan<byte> utf8)
     {
@@ -217,15 +218,16 @@ internal static unsafe class ChatBoxAccess
     /// <c>GetOwnerNode</c> — with the selection collapsed at
     /// <paramref name="index"/>. The only call that draws the cursor at the
     /// index: a bare cursor write never moves the cursor node, and
-    /// <see cref="SetText"/> puts it at the end of the text (ticket 20). The
-    /// component copies the struct's two strings into its raw and its evaluated
-    /// string, and the evaluated one is what the game rebuilds the box from on
-    /// the next focus-in — so both are the module's raw input string, which the
-    /// game's splice has just refreshed. Not its evaluated string or
-    /// <c>TextLength</c>: the splice leaves those as the old text plus the new
-    /// (ticket 20, round 4), and the box came back as that, cut to the raw
-    /// length. Raw and evaluated are the same for the text the splice accepts
-    /// (no payloads). Only while the module targets the Chat Box.
+    /// <see cref="SetText"/> puts it at the end of the text. The component
+    /// copies the struct's two strings into its raw and its evaluated string,
+    /// and the evaluated one is what the game rebuilds the box from on the next
+    /// focus-in — so both are the module's raw input string, which the game's
+    /// splice has just refreshed. Not its evaluated string or
+    /// <c>TextLength</c>: the splice leaves those as the old text plus the new,
+    /// and passed on they bring the box back as that, cut to the raw length
+    /// (<c>.scratch/ffxiv-ime-bridge/issues/20-drawn-cursor-after-native-write.md</c>).
+    /// Raw and evaluated are the same for the text the splice accepts (no
+    /// payloads). Only while the module targets the Chat Box.
     /// </summary>
     public static void NotifySelection(AtkComponentTextInput* input, int index)
     {
@@ -247,7 +249,7 @@ internal static unsafe class ChatBoxAccess
     /// <summary>
     /// Sets the cursor index (collapsing any selection) on the component and, if
     /// the Chat Box is the module's target, on the module's editing state too.
-    /// Both hold past the next frame (ticket 04).
+    /// Both hold past the next frame.
     /// </summary>
     public static void SetCursor(AtkComponentTextInput* input, int index)
     {
@@ -265,7 +267,7 @@ internal static unsafe class ChatBoxAccess
 
     public static string Describe(Exception ex) => ex.GetType().Name + ": " + ex.Message;
 
-    /// <summary>The module's editing state (cursor, selection) is live for the input it targets (ticket 04).</summary>
+    /// <summary>The module's editing state (cursor, selection) is live for the input it targets.</summary>
     private static bool IsModuleTarget(AtkTextInput* module, AtkComponentTextInput* input) =>
         module->TargetTextInputEventInterface == &input->AtkTextInputEventInterface;
 

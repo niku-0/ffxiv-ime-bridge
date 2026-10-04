@@ -16,7 +16,7 @@ internal readonly record struct CaptureTraceEntry(DateTime At, string Message, G
 
 /// <summary>
 /// Wires the <see cref="MessagePumpHook"/> to the <see cref="KeyboardGate"/>
-/// and, for buttons and the wheel, the <see cref="MouseGate"/> (ticket 16),
+/// and, for buttons and the wheel, the <see cref="MouseGate"/> (ADR-0003),
 /// reading Chat Box focus per message (and reporting the edge to the session,
 /// since a key can reach the hook before the tick has seen a focus gain), and
 /// keeps one trace of what happened to both. After a waited call the
@@ -143,14 +143,14 @@ internal sealed class KeyboardCapture : IDisposable
                 log.Information("Keyboard capture: Toggle Key capture ended by {Message}", message);
                 break;
             case GateRule.SurrogateHalf:
-                // The message names the code unit typed, so this goes where the trace goes (ticket 18).
+                // The message names the code unit typed, so it is logged at Debug, like the trace.
                 log.Debug("Keyboard capture: surrogate half {Message} passed unasked", message);
                 break;
         }
         return decision.Verdict != GateVerdict.Pass;
     }
 
-    /// <summary>The mouse over the overlay (ticket 16): the gate hit-tests the last frame's plan; a hit acts on the session's context and is swallowed.</summary>
+    /// <summary>The mouse over the overlay: the gate hit-tests the last frame's plan; a hit acts on the session's context and is swallowed.</summary>
     private bool DecideMouse(MouseMessage message)
     {
         mouseGate.Session = bridge.Session;
@@ -163,7 +163,7 @@ internal sealed class KeyboardCapture : IDisposable
     /// Counts every message, and traces only the ones the gate
     /// <see cref="GateDecision.Acted"/> on: the trace goes on the clipboard
     /// and into the log, so a key the gate let through untouched must leave no
-    /// record of itself (ticket 18).
+    /// record of itself.
     /// </summary>
     private void Record(string message, GateDecision decision, FocusSnapshot focus)
     {

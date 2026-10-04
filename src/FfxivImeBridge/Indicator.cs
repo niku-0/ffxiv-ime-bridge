@@ -13,25 +13,27 @@ namespace FfxivImeBridge;
 /// Box is focused and Forwarding is on: the context's input method, or <c>!</c>
 /// while Degraded. The channel label (<c>Say</c>) begins with a full-width space
 /// and a space that the game reserves for its badge — no node of the ChatLog
-/// draws there (ticket 14's dump) — so the glyph goes into that gap: a little
-/// left of the text input's edge, centred on the label, in the label's own
-/// font size (never the chat text's or the override); AXIS through
-/// <see cref="OverlayFont"/>. Two looks, the config's <see cref="IndicatorStyle"/>:
-/// the bare glyph in the label's colours with its edge as an outline, or the
-/// Windows client's badge itself — <c>Assets/badge-hiragana.png</c>, cropped
-/// from a screenshot of that client (<c>ref/ffxiv-indicator-uld-cropped-2.png</c>),
-/// drawn as a texture at its 22×23 px scaled down to about 0.7, times the HUD scale — for <c>あ</c>;
-/// any other glyph goes over <c>Assets/badge-frame.png</c>, the same crop
-/// with the <c>あ</c> painted out, in the label's edge gold with its edges
-/// softened. A badge texture not (yet) loaded falls back to the bare glyph.
-/// Without a label it sits left of the text node at the overlay's size, in the
-/// Preedit's ink. ImGui foreground list, so only the local player sees it.
-/// Hidden for a vanilla look by the config's <c>ShowIndicator</c>. Main thread (Draw).
+/// draws there, by the node dump in
+/// <c>.scratch/ffxiv-ime-bridge/issues/14-axis-font-and-vanilla-indicator.md</c>
+/// — so the glyph goes into that gap: a little left of the text input's edge,
+/// centred on the label, in the label's own font size (never the chat text's or
+/// the override); AXIS through <see cref="OverlayFont"/>. Two looks, the
+/// config's <see cref="IndicatorStyle"/>: the bare glyph in the label's colours
+/// with its edge as an outline, or the Windows client's badge itself —
+/// <c>Assets/badge-hiragana.png</c>, cropped from a screenshot of that client,
+/// drawn as a texture at its 22×23 px times <see cref="BadgeScale"/> and the
+/// HUD scale — for <c>あ</c>; any other glyph goes over
+/// <c>Assets/badge-frame.png</c>, the same crop with the <c>あ</c> painted out,
+/// in the label's edge gold with its edges softened. A badge texture not (yet)
+/// loaded falls back to the bare glyph. Without a label it sits left of the
+/// text node at the overlay's size, in the Preedit's ink. ImGui foreground
+/// list, so only the local player sees it. Hidden for a vanilla look by the
+/// config's <c>ShowIndicator</c>. Main thread (Draw).
 /// </summary>
 internal sealed class Indicator(Bridge bridge, IGameGui gui, ConfigStore config, OverlayFont font, ITextureProvider textures, string assetsDirectory)
 {
     private const float Gap = 4f;
-    /// <summary>Where the badge starts relative to the text input's text edge, at 100 % (the in-game check asked for it).</summary>
+    /// <summary>Where the badge starts relative to the text input's text edge, at 100 %.</summary>
     private const float LeftOfTextEdge = 2f;
     private static readonly Vector4 Ink = new(1f, 1f, 1f, 1f);
     private static readonly Vector4 Shadow = new(0f, 0f, 0f, 0.85f);
@@ -42,7 +44,7 @@ internal sealed class Indicator(Bridge bridge, IGameGui gui, ConfigStore config,
     private const string HiraganaBadge = "badge-hiragana.png";
     private const string FrameBadge = "badge-frame.png";
     private static readonly Rect FrameInterior = new(2f, 2f, 19f, 20f);
-    /// <summary>The texture's size on screen at 100 %, as a share of its pixels: the crop read too large in-game, twice by about 20 %.</summary>
+    /// <summary>The texture's size on screen at 100 %, as a share of its pixels: the screenshot the crop comes from is larger than the game draws the badge, and two thirds matches it in-game.</summary>
     private const float BadgeScale = 1f / 1.50f;
     /// <summary>The glyph's edges softened: copies this far off in each direction under it, at <see cref="BadgeSoftenAlpha"/>.</summary>
     private const float BadgeSoften = 0.5f;
@@ -58,7 +60,7 @@ internal sealed class Indicator(Bridge bridge, IGameGui gui, ConfigStore config,
     public void Draw()
     {
         if (!Visible || gui.GameUiHidden || bridge.Session is not { Forwarding: true, ChatBoxFocused: true, IndicatorGlyph: { } glyph }) return;
-        // The text node reports hidden while the box is empty, but its position is still valid (ticket 04).
+        // The text node reports hidden while the box is empty, but its position is still valid.
         if (ChatBoxAccess.TextNodeBox(gui) is not { } text || ChatBoxAccess.Style(gui) is not { } style) return;
         var warning = glyph.State == IndicatorState.Degraded;
 

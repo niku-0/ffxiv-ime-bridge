@@ -136,8 +136,8 @@ public sealed class InputContext : IAsyncDisposable
     /// <summary>
     /// Stop listening and let the context go without a <c>DestroyIC</c>: fcitx5
     /// reaped its side when it left the bus, so the call would only reach a
-    /// fcitx5 the bus started for it (ticket 18). Safe to call twice, and after
-    /// <see cref="DisposeAsync"/>.
+    /// fcitx5 the bus started for it (see <see cref="MethodCall"/>). Safe to
+    /// call twice, and after <see cref="DisposeAsync"/>.
     /// </summary>
     public void Abandon()
     {

@@ -35,7 +35,7 @@ internal sealed class FcitxContextFactory : IInputContextFactory
 /// fire-and-forget (D-Bus keeps them in order on one connection) except the
 /// key the Gate waits on; a failure is logged, never thrown into the game
 /// thread. Events pass straight through on the reader thread; <c>ForwardKey</c>
-/// is only logged in M1.
+/// is logged and ignored.
 /// </summary>
 internal sealed class InputContextClient : IInputContextClient
 {

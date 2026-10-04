@@ -2,15 +2,15 @@ namespace FfxivImeBridge.NativeWrite;
 
 /// <summary>
 /// Converts between the game's cursor index and UTF-8 byte offsets. The index
-/// is in code points: with <c>aあ</c> and the cursor at the end it reads 2, not 4
-/// (ticket 04, in-game).
+/// is in code points: with <c>aあ</c> and the cursor at the end it reads 2,
+/// not 4.
 /// </summary>
 internal static class CursorIndex
 {
     /// <summary>
     /// The Cursor as the game counts it: the input module's while the Chat Box
     /// is its target (it is focused), else the component's own field. Both are
-    /// live and agree when targeted (ticket 04).
+    /// live and agree when targeted.
     /// </summary>
     public static int Live(bool isModuleTarget, int moduleCursor, int componentCursor) =>
         isModuleTarget ? moduleCursor : componentCursor;

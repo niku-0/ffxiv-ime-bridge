@@ -42,8 +42,8 @@ public sealed record ProbeReport(ImmutableArray<ProbeStep> Steps, FcitxConnectio
     }
 
     /// <summary>
-    /// <see cref="ToString"/> for pasting into a public issue (ticket 25): the
-    /// home directory, in its Unix spelling and in Wine's <c>Z:</c> one (either
+    /// <see cref="ToString"/> for pasting into a public issue: the home
+    /// directory, in its Unix spelling and in Wine's <c>Z:</c> one (either
     /// slash, any case), shortened to <c>~</c>, because the platform rung reports
     /// <c>WINEPREFIX</c> and that path holds the login name. Only a path that
     /// starts with the home and stops at a separator matches, so <c>/home/ab</c>

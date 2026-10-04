@@ -104,7 +104,7 @@ internal sealed class ForwardingSession : IAsyncDisposable
     /// There is nothing on the other end to talk to: fcitx5 left the bus (it
     /// reaped its side of the context) or the connection died. Any call made
     /// anyway would be addressed to an unowned name, and the bus would start
-    /// fcitx5 for it (ticket 18).
+    /// fcitx5 for it.
     /// </summary>
     private bool NothingToTell => degraded is DegradedCause.BusLost or DegradedCause.ConnectionLost;
 
@@ -118,7 +118,7 @@ internal sealed class ForwardingSession : IAsyncDisposable
 
     /// <summary>
     /// The context's state as last taken on the game thread — after each waited
-    /// key reply and on each tick — for rendering (ticket 08). The context's own
+    /// key reply and on each tick — for rendering. The context's own
     /// <c>State</c> (<see cref="IsComposing"/>) is always the freshest; this one only moves on the game thread.
     /// </summary>
     public CompositionState Composition { get; private set; } = CompositionState.Idle;
@@ -177,7 +177,7 @@ internal sealed class ForwardingSession : IAsyncDisposable
     /// <summary>A key fcitx5 is told about but not asked about: modifier presses, and the release of every press it was told about.</summary>
     public void Tell(KeyEvent key) => ReachableContext?.SendKey(key);
 
-    /// <summary>Mouse selection (ticket 16): the candidate at <paramref name="index"/> on the current page, as fcitx5's own panel would.</summary>
+    /// <summary>Mouse selection (ADR-0003): the candidate at <paramref name="index"/> on the current page, as fcitx5's own panel would.</summary>
     public void SelectCandidate(int index) => ReachableContext?.SelectCandidate(index);
 
     public void NextPage() => ReachableContext?.NextPage();

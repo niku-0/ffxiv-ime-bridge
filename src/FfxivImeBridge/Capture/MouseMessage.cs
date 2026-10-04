@@ -21,7 +21,7 @@ internal static class MouseWindowMessage
     public const uint XButtonDblClk = 0x020D;
     public const uint MouseHWheel = 0x020E;
 
-    /// <summary>What the hook hands the <see cref="MouseGate"/>: the buttons and the wheel. Never a move (ticket 16), nor the horizontal wheel.</summary>
+    /// <summary>What the hook hands the <see cref="MouseGate"/>: the buttons and the wheel. Never a move, nor the horizontal wheel.</summary>
     public static bool IsFiltered(uint message) => message is >= LButtonDown and <= XButtonDblClk;
 }
 

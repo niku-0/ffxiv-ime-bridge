@@ -13,16 +13,16 @@ namespace FfxivImeBridge;
 
 /// <summary>
 /// On load the plugin climbs the session-bus transport ladder from inside the
-/// game (M0.2) and, if it holds, keeps one fcitx5 Input Context tied to the Chat
-/// Box's focus (M1.1) with the Indicator showing its input method. While
-/// Forwarding, the message pump hook's Gate asks fcitx5 about each key (M1.3)
-/// and the Preedit and candidates are drawn at the Cursor (M1.4); a Commit is
-/// written into the native Chat Box at the Cursor (M1.5) for the user's own
-/// Enter to send. The config file and the settings window (M2.2) hold the
-/// Toggle Key, the startup behaviour and the rest; <c>/imebridge debug</c>
-/// shows all of it. On Windows proper nothing is hooked and no session is
-/// opened (ticket 19): the windows open and say so, and <c>/imebridge probe</c>
-/// still climbs the ladder to show at which rung it stops.
+/// game and, if it holds, keeps one fcitx5 Input Context tied to the Chat Box's
+/// focus with the Indicator showing its input method. While Forwarding, the
+/// message pump hook's Gate asks fcitx5 about each key and the Preedit and
+/// candidates are drawn at the Cursor; a Commit is written into the native Chat
+/// Box at the Cursor for the user's own Enter to send (ADR-0001). The config
+/// file and the settings window hold the Toggle Key, the startup behaviour and
+/// the rest; <c>/imebridge debug</c> shows all of it. On Windows proper nothing
+/// is hooked and no session is opened: the windows open and say so, and
+/// <c>/imebridge probe</c> still climbs the ladder to show at which rung it
+/// stops.
 /// </summary>
 public sealed class Plugin : IDalamudPlugin
 {
@@ -67,7 +67,7 @@ public sealed class Plugin : IDalamudPlugin
         overlay = new CompositionOverlay(bridge, gui, overlayFont);
         // Wine is the whole point of the plugin; on Windows proper the manifest
         // promises it loads and does nothing, so nothing is hooked and no
-        // session is opened (ticket 19). Without the hook the Toggle Key would
+        // session is opened. Without the hook the Toggle Key would
         // only be swallowed for a "not reachable" toast, and the ladder would
         // be re-run on every Chat Box focus gain to fail at its first rung.
         var wine = Util.IsWine();
@@ -143,9 +143,8 @@ public sealed class Plugin : IDalamudPlugin
 
     /// <summary>
     /// One budget for the whole unload, spent in order: the session's teardown
-    /// first, then whatever is left for a climbing ladder. Each used to wait
-    /// five seconds of its own, so an unload with fcitx5 hung froze the game
-    /// for ten (ticket 19).
+    /// first, then whatever is left for a climbing ladder, so an unload with
+    /// fcitx5 hung freezes the game for one budget, not one per wait.
     /// </summary>
     public void Dispose()
     {

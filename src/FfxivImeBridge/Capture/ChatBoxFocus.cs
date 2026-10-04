@@ -17,11 +17,12 @@ internal readonly record struct FocusSnapshot(bool TextInputActive, string? Owne
     /// <summary>
     /// The Chat Box has focus for the session's purposes: the active text
     /// input's owner addon is ChatLog <em>and</em> the game window is active.
-    /// The walk resolved for every field tried in-game (ticket 03), so an
-    /// unresolved owner means "some other field", never the Chat Box. Window
-    /// activity is part of it because the box keeps its native focus through
-    /// an alt-tab, while fcitx5 focuses our context out for the other window's
-    /// and Mozc commits (ticket 11): the session must see that as a loss.
+    /// The walk resolved for every field tried in-game
+    /// (<c>.scratch/ffxiv-ime-bridge/issues/03-keyboard-capture-no-double-input.md</c>),
+    /// so an unresolved owner means "some other field", never the Chat Box.
+    /// Window activity is part of it because the box keeps its native focus
+    /// through an alt-tab, while fcitx5 focuses our context out for the other
+    /// window's and Mozc commits: the session must see that as a loss.
     /// </summary>
     public bool ChatBoxFocused => TextInputActive && !UiHidden && WindowActive && OwnerAddon == ChatLogAddon;
 

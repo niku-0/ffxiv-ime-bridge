@@ -13,8 +13,8 @@ namespace FfxivImeBridge.Capture;
 /// import even if this object is never disposed. Keyboard input is always
 /// posted, so <c>WM_KEYDOWN</c>, the <c>WM_CHAR</c> that <c>TranslateMessage</c>
 /// queued right behind it, and <c>WM_KEYUP</c> all come through here, one call
-/// each, on the game's main thread. Mouse buttons and the wheel are posted
-/// too and go to the mouse filter (ticket 16); moves are never filtered.
+/// each, on the game's main thread. Mouse buttons and the wheel are posted too
+/// and go to the mouse filter (ADR-0003); moves are never filtered.
 /// </summary>
 internal sealed unsafe class MessagePumpHook : IDisposable
 {

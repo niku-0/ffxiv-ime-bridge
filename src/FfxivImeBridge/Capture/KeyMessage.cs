@@ -72,7 +72,7 @@ internal static class VirtualKey
     public const int Oem4 = 0xDB;
     public const int Oem8 = 0xDF;
     public const int Oem102 = 0xE2;
-    /// <summary>What Wine posts for AltGr (X11 <c>ISO_Level3_Shift</c>) instead of <see cref="RMenu"/>: <c>vk=0xE4 sc=0x38 ext</c> on a Nordic layout (ticket 07's trace).</summary>
+    /// <summary>What Wine posts for AltGr (X11 <c>ISO_Level3_Shift</c>) instead of <see cref="RMenu"/>: <c>vk=0xE4 sc=0x38 ext</c> on a Nordic layout.</summary>
     public const int WineAltGr = 0xE4;
 }
 

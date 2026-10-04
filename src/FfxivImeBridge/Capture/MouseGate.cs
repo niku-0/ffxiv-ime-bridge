@@ -4,17 +4,17 @@ using FfxivImeBridge.Session;
 namespace FfxivImeBridge.Capture;
 
 /// <summary>
-/// The Gate for the mouse (ticket 16, ADR-0003): decides, per button message
-/// and wheel notch and before the game sees it, by hit-testing the plan the
-/// overlay drew last frame. While the <see cref="Session"/>'s gate is active,
-/// the Chat Box focused and a Composition shown: over the candidate box every press, its release
-/// and the wheel are Swallowed — a left press on a row selects that candidate,
-/// on <c>▲</c>/<c>▼</c> pages, the wheel pages, other buttons and the padding
-/// do nothing; over the preedit Swallowed and inert; anywhere else passed
-/// untouched. A release goes where its button's press went, wherever it is
-/// released. The calls are fire-and-forget: fcitx5's <c>UpdateClientSideUI</c>
-/// arrives out of band and the tick renders it. Not thread-safe: it lives on
-/// the game's message pump.
+/// The Gate for the mouse (ADR-0003): decides, per button message and wheel
+/// notch and before the game sees it, by hit-testing the plan the overlay drew
+/// last frame. While the <see cref="Session"/>'s gate is active, the Chat Box
+/// focused and a Composition shown: over the candidate box every press, its
+/// release and the wheel are Swallowed — a left press on a row selects that
+/// candidate, on <c>▲</c>/<c>▼</c> pages, the wheel pages, other buttons and
+/// the padding do nothing; over the preedit Swallowed and inert; anywhere else
+/// passed untouched. A release goes where its button's press went, wherever it
+/// is released. The calls are fire-and-forget: fcitx5's
+/// <c>UpdateClientSideUI</c> arrives out of band and the tick renders it. Not
+/// thread-safe: it lives on the game's message pump.
 /// </summary>
 internal sealed class MouseGate(Func<CompositionPlan?> lastPlan)
 {

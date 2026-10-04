@@ -17,7 +17,7 @@ internal enum StartupBehaviour
     AlwaysOn,
 }
 
-/// <summary>How the Indicator is drawn (ticket 14).</summary>
+/// <summary>How the Indicator is drawn.</summary>
 [JsonConverter(typeof(StringEnumConverter))]
 internal enum IndicatorStyle
 {
@@ -29,11 +29,11 @@ internal enum IndicatorStyle
 
 /// <summary>
 /// The config file (v1, spec "Codebase shape"): the Toggle Key, the font size
-/// (0 = match the Chat Box; consumed by ticket 14), the Indicator, the startup
-/// behaviour and the last Forwarding value, which is written on every flip.
-/// A plain object: Dalamud serializes the public properties and reads them back
-/// ignoring anything it does not know, so a missing field keeps its initializer.
-/// Enums are written by name so the file reads at a glance.
+/// (0 = match the Chat Box), the Indicator, the startup behaviour and the last
+/// Forwarding value, which is written on every flip. A plain object: Dalamud
+/// serializes the public properties and reads them back ignoring anything it
+/// does not know, so a missing field keeps its initializer. Enums are written
+/// by name so the file reads at a glance.
 /// </summary>
 internal sealed class Configuration : IPluginConfiguration
 {
@@ -43,7 +43,7 @@ internal sealed class Configuration : IPluginConfiguration
 
     public ToggleKey ToggleKey { get; set; } = ToggleKey.Default;
 
-    /// <summary>Preedit font size in pixels; <c>0</c> matches the Chat Box (ticket 14 draws with it).</summary>
+    /// <summary>Preedit font size in pixels; <c>0</c> matches the Chat Box.</summary>
     public float FontSizeOverride { get; set; }
 
     public bool ShowIndicator { get; set; } = true;

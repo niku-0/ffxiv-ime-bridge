@@ -51,7 +51,7 @@ internal sealed class SessionLifecycle : IDisposable
     /// The whole unload's budget on the framework thread, which a Reconnect's
     /// teardown borrows as its own bound. <c>Plugin.Dispose</c> splits it between
     /// this and the Transport Ladder, rather than letting each wait it out in
-    /// turn and freeze the game for twice as long (ticket 19).
+    /// turn and freeze the game for twice as long.
     /// </summary>
     public static readonly TimeSpan Grace = TimeSpan.FromSeconds(5);
 

@@ -17,7 +17,7 @@ internal enum GateRule
 {
     /// <summary>Not a keyboard message.</summary>
     NotKeyboard,
-    /// <summary>The gate is not acting (Forwarding off, Degraded, the Chat Box not focused — for the mouse, no Composition shown): passed untouched, and not traced (ticket 18). A char or release that follows such a press is Inactive too.</summary>
+    /// <summary>The gate is not acting (Forwarding off, Degraded, the Chat Box not focused — for the mouse, no Composition shown): passed untouched, and not traced. A char or release that follows such a press is Inactive too.</summary>
     Inactive,
     /// <summary>The toggle chord's press, swallowed whole: the owner flips Forwarding. Its repeats, chars and release are <see cref="FollowsPress"/>.</summary>
     Toggle,
@@ -37,11 +37,11 @@ internal enum GateRule
     FollowsPress,
     /// <summary>A dead key's char: swallowed silently; the composed character follows.</summary>
     DeadChar,
-    /// <summary>Half a UTF-16 surrogate pair: passed unasked (ticket 06's rule).</summary>
+    /// <summary>Half a UTF-16 surrogate pair: passed unasked, since a half cannot be asked about alone and no layout under Wine types one.</summary>
     SurrogateHalf,
     /// <summary>Toggle Key capture ("Press a key"): the key that ended it, Escape included, swallowed whole.</summary>
     Captured,
-    /// <summary>Mouse (ticket 16): a press or the wheel off the overlay, passed untouched.</summary>
+    /// <summary>Mouse: a press or the wheel off the overlay, passed untouched.</summary>
     Outside,
     /// <summary>Mouse: on the preedit, swallowed and inert.</summary>
     Preedit,
@@ -62,7 +62,7 @@ internal readonly record struct GateDecision(GateVerdict Verdict, GateRule Rule,
     /// The gate acted on the message rather than letting it past untouched.
     /// What the trace and the Debug log keep: everything else is the user
     /// typing somewhere that is none of the plugin's business — mail, the FC
-    /// board, market search, a tell in another window (ticket 18).
+    /// board, market search, a tell in another window.
     /// </summary>
     public bool Acted => Rule != GateRule.Inactive;
 }
@@ -229,7 +229,7 @@ internal sealed class KeyboardGate
 
         if (message.IsSurrogateHalf)
         {
-            // A surrogate half cannot be asked or passed alone (ticket 06): both halves pass, as if declined.
+            // A surrogate half cannot be asked or passed alone: both halves pass, as if declined.
             if (press.Provisional) presses[vk] = new Press(GateVerdict.Pass);
             return new GateDecision(GateVerdict.Pass, Following(press, GateRule.SurrogateHalf), KeyClass.Printing);
         }
@@ -268,7 +268,7 @@ internal sealed class KeyboardGate
     /// The rule for a message that goes where its press went. A press the gate
     /// never touched keeps its chars and its release <see cref="GateRule.Inactive"/>:
     /// a <c>WM_CHAR</c> carries the character typed, and one typed past an
-    /// inactive gate is none of the plugin's business (ticket 18).
+    /// inactive gate is none of the plugin's business.
     /// </summary>
     private static GateRule Following(Press press, GateRule rule = GateRule.FollowsPress) => press.Untouched ? GateRule.Inactive : rule;
 
@@ -310,6 +310,6 @@ internal sealed class KeyboardGate
     /// <summary>What is known about a key that is down: where it went, and the press fcitx5 was told about, if any.</summary>
     /// <param name="Provisional">A printing key whose char has not come yet: swallowed so far, the char decides.</param>
     /// <param name="Toggled">The toggle chord: its repeats follow it until its release, whatever the modifiers do meanwhile.</param>
-    /// <param name="Untouched">The gate was not acting at the press: its chars and its release are <see cref="GateRule.Inactive"/> too, so nothing typed past the gate is traced (ticket 18).</param>
+    /// <param name="Untouched">The gate was not acting at the press: its chars and its release are <see cref="GateRule.Inactive"/> too, so nothing typed past the gate is traced.</param>
     private readonly record struct Press(GateVerdict Verdict, bool Provisional = false, SentKey? Sent = null, bool Toggled = false, bool Untouched = false);
 }

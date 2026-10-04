@@ -9,8 +9,8 @@ internal readonly record struct ChatBoxLimits(int MaxChars, int MaxBytes)
     /// The limits the splice checks: a non-zero handler value wins over the ULD
     /// data, and <c>GetInputMaxLength()</c> stands in for the character limit when
     /// both read 0, so that the check can fire before <c>SetText</c> gets to
-    /// truncate. In-game the Chat Box reads MaxByte=500 everywhere and MaxChar=0
-    /// (ticket 04): its limit is 500 bytes.
+    /// truncate. In-game the Chat Box reads MaxByte=500 everywhere and
+    /// MaxChar=0: its limit is 500 bytes.
     /// </summary>
     public static ChatBoxLimits Of(int? handlerMaxChar, int? handlerMaxByte, uint maxChar, uint maxByte, uint inputMaxLength) => new(
         handlerMaxChar is > 0 and var chars ? chars : maxChar > 0 ? (int)maxChar : (int)inputMaxLength,
@@ -38,7 +38,7 @@ internal sealed record SplicePlan(byte[] Text, int CursorByteOffset, string Comm
 /// degrades to append-at-end, flagged so the caller can report it. So does a
 /// Chat Box holding SeString payloads (auto-translate entries: <c>0x02 … 0x03</c>),
 /// because the cursor index and the byte offsets no longer line up and a splice
-/// could land inside one; M1 decides how to count them.
+/// could land inside one.
 /// </summary>
 internal static class ChatBoxSplice
 {
@@ -74,8 +74,8 @@ internal static class ChatBoxSplice
     /// fcitx5 can commit any string: a newline, any other C0 control, or
     /// <c>U+0002</c>, the byte a SeString payload starts with. The game's own
     /// <c>InsertText</c> sanitises as well, but the splice already refuses a
-    /// buffer holding <c>0x02</c> and must not introduce one either (ticket 19).
-    /// Controls are single UTF-16 units, so surrogate pairs pass through whole.
+    /// buffer holding <c>0x02</c> and must not introduce one either. Controls
+    /// are single UTF-16 units, so surrogate pairs pass through whole.
     /// </summary>
     private static (string Text, int Dropped) WithoutControls(string committed)
     {

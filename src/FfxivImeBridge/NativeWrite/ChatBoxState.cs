@@ -8,7 +8,7 @@ internal readonly record struct ScreenBox(float X, float Y, float Width, float H
     public override string ToString() => $"({X:0.#},{Y:0.#}) {Width:0.#}×{Height:0.#}{(Visible ? "" : " hidden")}";
 }
 
-/// <summary>The input module's own strings as text (ticket 20): the before/selected/after split its keystrokes edit at, its whole input string and the evaluated one.</summary>
+/// <summary>The input module's own strings as text: the before/selected/after split its keystrokes edit at, its whole input string and the evaluated one.</summary>
 internal sealed record ModuleStrings(string Before, string Selected, string After, string Input, string Evaluated)
 {
     public override string ToString() => $"module strings: before=\"{Before}\" sel=\"{Selected}\" after=\"{After}\" input=\"{Input}\" evaluated=\"{Evaluated}\"";

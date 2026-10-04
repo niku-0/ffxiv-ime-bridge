@@ -2,9 +2,9 @@ namespace FfxivImeBridge.NativeWrite;
 
 /// <summary>
 /// Words the refusal of a Commit that would push the Chat Box past the game's
-/// limit. The Chat Box's limit is 500 bytes (ticket 04), which means nothing to
-/// the user, so the byte count comes with an approximate character count at
-/// 3 bytes per kana or kanji, rounded up: the least they would have to remove.
+/// limit. The Chat Box's limit is 500 bytes, which means nothing to the user,
+/// so the byte count comes with an approximate character count at 3 bytes per
+/// kana or kanji, rounded up: the least they would have to remove.
 /// </summary>
 internal static class Overflow
 {

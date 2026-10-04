@@ -1,9 +1,9 @@
 namespace FfxivImeBridge.Rendering;
 
 /// <summary>
-/// The pixel size the overlay's AXIS handle is built at (ticket 14): the
-/// config override as screen pixels when set, else the Chat Box text node's
-/// own size at its accumulated HUD scale. Pure; the overlay reads the node.
+/// The pixel size the overlay's AXIS handle is built at: the config override as
+/// screen pixels when set, else the Chat Box text node's own size at its
+/// accumulated HUD scale. Pure; the overlay reads the node.
 /// </summary>
 internal static class OverlayFontSize
 {
@@ -27,6 +27,6 @@ internal static class OverlayFontSize
         return Math.Max(MinimumPx, MathF.Round(px));
     }
 
-    /// <summary>The size the game draws the Chat Box text at, in screen pixels, unrounded: what its baseline is derived from (ticket 15).</summary>
+    /// <summary>The size the game draws the Chat Box text at, in screen pixels, unrounded: what its baseline is derived from.</summary>
     public static float ChatTextPx(byte? nodeFontSizePt, float scale) => (nodeFontSizePt is > 0 and var pt ? pt : DefaultPt) * PixelsPerPoint * scale;
 }

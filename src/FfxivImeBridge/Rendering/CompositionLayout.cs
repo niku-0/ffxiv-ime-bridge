@@ -35,7 +35,7 @@ internal static class CompositionLayout
     /// Opaque ground the width of the text at the Cursor's x, then each segment
     /// with its flags, then the cursor bar. The line's baseline sits on the Chat
     /// Box text's (the text node's top plus the ascent AXIS has at its size),
-    /// not centred on the cursor node, which sat the text low (ticket 15).
+    /// not centred on the cursor node, which would sit the text low.
     /// </summary>
     private static Rect LayoutPreedit(Preedit preedit, CursorAnchor anchor, TextMetrics metrics, ImmutableArray<DrawOp>.Builder ops)
     {
@@ -79,8 +79,8 @@ internal static class CompositionLayout
     /// Aux-up line, the candidates (a column for fcitx5's vertical hint, a row
     /// otherwise, with the paging marks after them), aux-down line; the box
     /// above the preedit when the Cursor is in the lower half of the screen,
-    /// below otherwise, clamped to the screen. Null when there is nothing to list.
-    /// Candidates and marks become hit regions (ticket 16); aux lines do not.
+    /// below otherwise, clamped to the screen. Null when there is nothing to
+    /// list. Candidates and marks become hit regions; aux lines do not.
     /// </summary>
     private static Rect? LayoutCandidates(CompositionState state, Rect preeditBox, Vector2 screen, TextMetrics metrics, ImmutableArray<DrawOp>.Builder ops, ImmutableArray<HitRegion>.Builder regions)
     {

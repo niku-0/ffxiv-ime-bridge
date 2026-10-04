@@ -122,7 +122,7 @@ only shows a toast (see Reconnect below).
 - **Indicator**: one glyph drawn where the game's own input-mode badge sits
   — in the gap the channel label (`Say`, `AddonChatLog.CurrentChannelTextNode`)
   reserves for it: the label's text begins with a full-width space and a
-  space, and the glyph goes there, 5 px (× HUD scale) left of the text
+  space, and the glyph goes there, 2 px (× HUD scale) left of the text
   input's text edge and centred on the label — while the box is focused
   and Forwarding is on —
   `あ` for Mozc, `A` for a keyboard layout, the input method's initial
@@ -136,8 +136,8 @@ only shows a toast (see Reconnect below).
   Windows client's badge itself: `Assets/badge-hiragana.png`, a 22×23 px
   crop of that client's `あ` badge from a screenshot (the crop's four
   corner pixels made transparent), as an ImGui image at its own size
-  ÷ 1.44 (the crop read too large in-game, twice by a fifth; `BadgeScale`)
-  × HUD scale through
+  ÷ 1.5 (`BadgeScale`: the screenshot is larger than the game draws the
+  badge) × HUD scale through
   `ITextureProvider.GetFromFile` (`GetWrapOrDefault` each frame; until it
   has loaded the plain glyph draws instead). Any other glyph (`A`, an
   initial, `!`) goes over `Assets/badge-frame.png` — the same crop with the

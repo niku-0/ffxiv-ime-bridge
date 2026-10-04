@@ -6,7 +6,7 @@ namespace FfxivImeBridge.Rendering;
 /// <summary>
 /// The Cursor on screen: the cursor node's top-left, its drawn height, the UI
 /// scale it is drawn at, and the top of the Chat Box text's line (the text
-/// node's, which the game draws its text down from — ticket 15).
+/// node's, which the game draws its text down from).
 /// </summary>
 internal readonly record struct CursorAnchor(float X, float Y, float Height, float Scale, float TextTop);
 
@@ -54,15 +54,15 @@ internal sealed record Line(Vector2 From, Vector2 To, Paint Paint) : DrawOp;
 /// below a line's top) and the width of a run, all at the drawn size — and
 /// <paramref name="ChatAscent"/>, the Chat Box text's own ascent, AXIS at the
 /// text node's size: the same as <paramref name="Ascent"/> unless the size
-/// override puts the overlay at another size (ticket 15).
+/// override puts the overlay at another size.
 /// </summary>
 internal readonly record struct TextMetrics(float LineHeight, float Ascent, float ChatAscent, Func<string, float> WidthOf);
 
 /// <summary>
-/// The Preedit's vertical placement in one frame, in screen pixels (ticket 15):
-/// the text node's top, the cursor node's top, the Preedit's top, its ascent
-/// and the chat text's. Its baseline is <see cref="Top"/> + <see cref="Ascent"/>,
-/// meant to equal <see cref="TextTop"/> + <see cref="ChatAscent"/>.
+/// The Preedit's vertical placement in one frame, in screen pixels: the text
+/// node's top, the cursor node's top, the Preedit's top, its ascent and the
+/// chat text's. Its baseline is <see cref="Top"/> + <see cref="Ascent"/>, meant
+/// to equal <see cref="TextTop"/> + <see cref="ChatAscent"/>.
 /// </summary>
 internal readonly record struct PreeditPlacement(float TextTop, float CursorTop, float Top, float Ascent, float ChatAscent)
 {
@@ -72,7 +72,7 @@ internal readonly record struct PreeditPlacement(float TextTop, float CursorTop,
         $"text node top={TextTop:0.#} cursor node top={CursorTop:0.#}; preedit top={Top:0.#} baseline={Baseline:0.#} (ascent={Ascent:0.##}, chat text ascent={ChatAscent:0.##})";
 }
 
-/// <summary>What a left press on a spot of the candidate box does (ticket 16).</summary>
+/// <summary>What a left press on a spot of the candidate box does.</summary>
 internal enum HitAction
 {
     /// <summary>A candidate row or cell: <c>SelectCandidate(<see cref="HitRegion.Candidate"/>)</c>.</summary>
@@ -86,7 +86,7 @@ internal enum HitAction
 /// <summary>A clickable spot of the candidate box: its rect on screen and what a left press there does; <paramref name="Candidate"/> is the index for <see cref="HitAction.SelectCandidate"/>.</summary>
 internal readonly record struct HitRegion(Rect Rect, HitAction Action, int Candidate = -1);
 
-/// <summary>Where a point falls on what a frame drew (ticket 16).</summary>
+/// <summary>Where a point falls on what a frame drew.</summary>
 internal enum HitZone
 {
     Outside,
