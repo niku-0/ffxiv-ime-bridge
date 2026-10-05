@@ -30,15 +30,9 @@ jobs:
             exit 1
           fi
 
-      # The manifest's Changelog is both the installer's changelog and the release notes;
-      # repo.json still holds the previous release's, so an unchanged one was not written for this tag.
+      # The manifest's Changelog is both the installer's changelog and the release notes.
       - name: Changelog is written for this release
-        run: |
-          changelog=$(jq -r '.Changelog // ""' src/FfxivImeBridge/FfxivImeBridge.json)
-          if [ -z "$changelog" ] || [ "$changelog" = "$(jq -r '.[0].Changelog // ""' repo.json)" ]; then
-            echo "::error::Changelog in src/FfxivImeBridge/FfxivImeBridge.json is empty or unchanged since the last release"
-            exit 1
-          fi
+        run: tools/check-changelog.sh
 
       # Sets DALAMUD_HOME, which Dalamud.NET.Sdk and the tests' DalamudLibPath both honour.
       - uses: Blooym/setup-dalamud@v1

@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  TZ: UTC
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Sets DALAMUD_HOME, which Dalamud.NET.Sdk and the tests' DalamudLibPath both honour.
+      - uses: Blooym/setup-dalamud@v1
+        with:
+          branch: release
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # The fcitx5 tests skip themselves: the runner has no DBUS_SESSION_BUS_ADDRESS.
+      - run: dotnet test

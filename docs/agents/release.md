@@ -5,7 +5,7 @@ The `Changelog` in `src/FfxivImeBridge/FfxivImeBridge.json` is the release's onl
 ## Steps
 
 1. **Collect.** Run `git log --format='%h %s%n%b' $(git describe --tags --abbrev=0)..HEAD`, and run `gh issue view <n>` for every issue the commits close. Done when every commit is either covered by a changelog line or deliberately left out under the rules below.
-2. **Write.** Replace the whole `Changelog` value. Each release gets a fresh list, because the workflow refuses a changelog identical to the previous release's.
+2. **Write.** Replace the whole `Changelog` value. Each release gets a fresh list, because the workflow refuses a changelog identical to the previous release's. Done when `tools/check-changelog.sh` passes.
 3. **Review.** Show the user the changelog and stop. The changelog becomes public when the tag is pushed, so tag nothing until they say go.
 4. **Release.** Bump `<Version>`, commit, tag and push as `docs/dev-plugin.md` describes. Commits and tags use `TZ=UTC` (`docs/agents/issue-tracker.md`, "Commits").
 

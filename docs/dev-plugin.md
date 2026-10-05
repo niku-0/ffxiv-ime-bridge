@@ -29,8 +29,9 @@ Bump `<Version>` in `src/FfxivImeBridge/FfxivImeBridge.csproj`, replace
 changes (written as `docs/agents/release.md` describes), commit, tag
 `v<Version>`, push both. `.github/workflows/release.yml` then:
 
-1. fails unless the tag is `v` + `<Version>`, and unless the Changelog is set
-   and differs from the one in `repo.json` (the previous release's);
+1. fails unless the tag is `v` + `<Version>`, and unless
+   `tools/check-changelog.sh` passes: the Changelog is set, differs from the
+   one in `repo.json` (the previous release's), and is plain `- ` bullets;
 2. installs the release branch of Dalamud, runs `dotnet test` (the fcitx5
    tests skip without a session bus) and builds Release;
 3. creates the GitHub release with `FfxivImeBridge.zip` attached; its notes
