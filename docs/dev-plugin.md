@@ -24,14 +24,18 @@ workflow guarantees it by making `repo.json` from the manifest.
 
 ## Release
 
-Bump `<Version>` in `src/FfxivImeBridge/FfxivImeBridge.csproj`, commit, tag
-`v<Version>`, push both. `.github/workflows/release.yml` then:
+Bump `<Version>` in `src/FfxivImeBridge/FfxivImeBridge.csproj`, replace
+`Changelog` in `src/FfxivImeBridge/FfxivImeBridge.json` with this release's
+changes, commit, tag `v<Version>`, push both. The Changelog is plain text with
+`- ` bullets: Dalamud's installer shows it unrendered, GitHub as Markdown.
+`.github/workflows/release.yml` then:
 
-1. fails unless the tag is `v` + `<Version>`;
+1. fails unless the tag is `v` + `<Version>`, and unless the Changelog is set
+   and differs from the one in `repo.json` (the previous release's);
 2. installs the release branch of Dalamud, runs `dotnet test` (the fcitx5
    tests skip without a session bus) and builds Release;
-3. creates the GitHub release with `FfxivImeBridge.zip` attached, noting the
-   Dalamud version it was built against;
+3. creates the GitHub release with `FfxivImeBridge.zip` attached; its notes
+   are the Changelog and the Dalamud version it was built against;
 4. commits `repo.json` to `main`: the manifest inside that zip, plus
    `DownloadLinkInstall`/`DownloadLinkUpdate` pinned to the asset.
 

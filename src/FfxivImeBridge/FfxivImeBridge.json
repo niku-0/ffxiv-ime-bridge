@@ -8,5 +8,6 @@
   "IconUrl": "https://raw.githubusercontent.com/niku-0/ffxiv-ime-bridge/main/src/FfxivImeBridge/images/icon.png",
   "ImageUrls": ["https://raw.githubusercontent.com/niku-0/ffxiv-ime-bridge/main/src/FfxivImeBridge/images/image1.png"],
   "AcceptsFeedback": false,
-  "Tags": ["ime", "japanese", "linux", "fcitx5", "chat"]
+  "Tags": ["ime", "japanese", "linux", "fcitx5", "chat"],
+  "Changelog": "- The Indicator follows Mozc's mode: A for direct input, あ for hiragana, ア / ｱ for katakana, 半 / 全 for the ASCII modes. Without a system tray it shows あ as before.\n- If XMODIFIERS is set to give fcitx5 your keys before the plugin, the plugin warns the user in chat on load and names the XIVLauncher setting that fixes it.\n- Holding the Toggle Key flips Forwarding once, instead of on every key repeat.\n- Letting go of Alt while still holding the Toggle Key no longer switches Mozc to direct input.\n- The plugin has an icon and a screenshot in the installer.\n- Removed the debug command /imebridge im and the debug tab's Dump input nodes button."
 }

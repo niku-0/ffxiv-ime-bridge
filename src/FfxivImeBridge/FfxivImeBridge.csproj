@@ -3,7 +3,7 @@
   <!-- The SDK sets the build properties (LangVersion 14.0 and a lock file among them) and the Dalamud references;
        see docs/dev-plugin.md. The manifest is FfxivImeBridge.json. -->
   <PropertyGroup>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Description>Type Japanese in the FFXIV chat box on Linux, using fcitx5.</Description>
     <!-- Dalamud is a Windows process and the library P/Invokes only on Windows; the analyzer can't see that. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>

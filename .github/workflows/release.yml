@@ -30,6 +30,16 @@ jobs:
             exit 1
           fi
 
+      # The manifest's Changelog is both the installer's changelog and the release notes;
+      # repo.json still holds the previous release's, so an unchanged one was not written for this tag.
+      - name: Changelog is written for this release
+        run: |
+          changelog=$(jq -r '.Changelog // ""' src/FfxivImeBridge/FfxivImeBridge.json)
+          if [ -z "$changelog" ] || [ "$changelog" = "$(jq -r '.[0].Changelog // ""' repo.json)" ]; then
+            echo "::error::Changelog in src/FfxivImeBridge/FfxivImeBridge.json is empty or unchanged since the last release"
+            exit 1
+          fi
+
       # Sets DALAMUD_HOME, which Dalamud.NET.Sdk and the tests' DalamudLibPath both honour.
       - uses: Blooym/setup-dalamud@v1
         with:
@@ -54,9 +64,12 @@ jobs:
             exit 1
           fi
           cp "$OUTPUT_DIR/latest.zip" "$RUNNER_TEMP/$ASSET"
+          changelog=$(unzip -p "$RUNNER_TEMP/$ASSET" FfxivImeBridge.json | jq -r .Changelog)
           gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/$ASSET" \
             --title "$GITHUB_REF_NAME" \
-            --notes "Built against Dalamud $dalamud_version (release branch)."
+            --notes "$changelog
+
+          Built against Dalamud $dalamud_version (release branch)."
 
       # repo.json is the manifest inside the zip plus the pinned download links, so the two cannot drift.
       - name: Commit repo.json to main
