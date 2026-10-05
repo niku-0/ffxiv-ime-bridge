@@ -77,6 +77,11 @@ public sealed class Plugin : IDalamudPlugin
         windows.AddWindow(settingsWindow);
         windows.AddWindow(debugWindow);
 
+        // The Chat Box stays usable in cutscenes and gpose, so the Indicator and Preedit must
+        // too; Dalamud would otherwise stop calling every Draw handler there. Both gate
+        // themselves on the Chat Box being focused, so nothing extra is drawn over a cutscene.
+        pluginInterface.UiBuilder.DisableCutsceneUiHide = true;
+        pluginInterface.UiBuilder.DisableGposeUiHide = true;
         pluginInterface.UiBuilder.Draw += windows.Draw;
         pluginInterface.UiBuilder.Draw += indicator.Draw;
         pluginInterface.UiBuilder.Draw += overlay.Draw;
