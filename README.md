@@ -6,6 +6,8 @@ A Dalamud plugin. It shows what you are composing, candidate list included,
 right in the game's own chat box, and places the finished text there for you
 to send with Enter.
 
+![Composing ポテチを取り、たべる！ in the Party chat box, with Mozc's candidates above it](docs/images/chat-box.png)
+
 ## Why
 
 On Linux the game runs under Wine. When `XMODIFIERS` points Wine at fcitx5,

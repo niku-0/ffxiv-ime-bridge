@@ -6,6 +6,7 @@
   "ApplicableVersion": "any",
   "RepoUrl": "https://github.com/niku-0/ffxiv-ime-bridge",
   "IconUrl": "https://raw.githubusercontent.com/niku-0/ffxiv-ime-bridge/main/src/FfxivImeBridge/images/icon.png",
+  "ImageUrls": ["https://raw.githubusercontent.com/niku-0/ffxiv-ime-bridge/main/src/FfxivImeBridge/images/image1.png"],
   "AcceptsFeedback": false,
   "Tags": ["ime", "japanese", "linux", "fcitx5", "chat"]
 }
