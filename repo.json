@@ -3,7 +3,7 @@
     "Author": "niku-0",
     "Name": "FFXIV IME Bridge",
     "InternalName": "FfxivImeBridge",
-    "AssemblyVersion": "0.1.0.0",
+    "AssemblyVersion": "0.1.1.0",
     "Description": "Lets you type Japanese in the FFXIV chat box on Linux. Instead of going through Wine's IME support, the plugin talks to fcitx5 directly and shows what you are composing, candidate list included, right in the chat box.\n\nRequires fcitx5 with a Japanese input method such as Mozc. On Windows the plugin does nothing.\n\nType /imebridge to open the settings.",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/niku-0/ffxiv-ime-bridge",
@@ -19,9 +19,14 @@
     "LoadSync": false,
     "CanUnloadAsync": false,
     "LoadPriority": 0,
+    "ImageUrls": [
+      "https://raw.githubusercontent.com/niku-0/ffxiv-ime-bridge/main/src/FfxivImeBridge/images/image1.png"
+    ],
+    "IconUrl": "https://raw.githubusercontent.com/niku-0/ffxiv-ime-bridge/main/src/FfxivImeBridge/images/icon.png",
     "Punchline": "Type Japanese in the chat box on Linux, using fcitx5.",
+    "Changelog": "- The Indicator follows Mozc's mode: A for direct input, あ for hiragana, ア / ｱ for katakana, 半 / 全 for the ASCII modes. Without a system tray it shows あ as before.\n- If XMODIFIERS is set to give fcitx5 your keys before the plugin, the plugin warns the user in chat on load and names the XIVLauncher setting that fixes it.\n- Holding the Toggle Key flips Forwarding once, instead of on every key repeat.\n- Letting go of Alt while still holding the Toggle Key no longer switches Mozc to direct input.\n- The plugin has an icon and a screenshot in the installer.\n- Removed the debug command /imebridge im and the debug tab's Dump input nodes button.",
     "AcceptsFeedback": false,
-    "DownloadLinkInstall": "https://github.com/niku-0/ffxiv-ime-bridge/releases/download/v0.1.0/FfxivImeBridge.zip",
-    "DownloadLinkUpdate": "https://github.com/niku-0/ffxiv-ime-bridge/releases/download/v0.1.0/FfxivImeBridge.zip"
+    "DownloadLinkInstall": "https://github.com/niku-0/ffxiv-ime-bridge/releases/download/v0.1.1/FfxivImeBridge.zip",
+    "DownloadLinkUpdate": "https://github.com/niku-0/ffxiv-ime-bridge/releases/download/v0.1.1/FfxivImeBridge.zip"
   }
 ]
