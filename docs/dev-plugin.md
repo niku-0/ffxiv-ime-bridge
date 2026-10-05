@@ -26,9 +26,8 @@ workflow guarantees it by making `repo.json` from the manifest.
 
 Bump `<Version>` in `src/FfxivImeBridge/FfxivImeBridge.csproj`, replace
 `Changelog` in `src/FfxivImeBridge/FfxivImeBridge.json` with this release's
-changes, commit, tag `v<Version>`, push both. The Changelog is plain text with
-`- ` bullets: Dalamud's installer shows it unrendered, GitHub as Markdown.
-`.github/workflows/release.yml` then:
+changes (written as `docs/agents/release.md` describes), commit, tag
+`v<Version>`, push both. `.github/workflows/release.yml` then:
 
 1. fails unless the tag is `v` + `<Version>`, and unless the Changelog is set
    and differs from the one in `repo.json` (the previous release's);

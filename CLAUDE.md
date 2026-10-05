@@ -12,6 +12,10 @@ The five canonical triage roles use their default names as GitHub labels (`needs
 
 Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
+### Releases
+
+Releasing a version or writing its changelog: the manifest's `Changelog` is both the Dalamud installer's changelog and the GitHub release notes. See `docs/agents/release.md`.
+
 ### Code review
 
 `/code-review`'s Standards and Spec sub-agents are spawned as
